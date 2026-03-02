@@ -79,12 +79,15 @@ export function getApiUrlFromEnv(): string {
   return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_V1_URL || 'http://localhost:5001';
 }
 
-/** Base URL para o client: se a API foi injetada (produção), chama a API direto; senão usa proxy ou fallback. */
+/** Base URL para o client: prioriza a URL da API de produção (NEXT_PUBLIC_API_URL / injetada); só usa proxy quando não houver URL explícita (ex.: dev). */
 function getClientBaseUrl(): string {
-  const injected = typeof window !== 'undefined' && (window as unknown as { __TRILLIO_API_URL__?: string }).__TRILLIO_API_URL__?.trim();
-  if (injected) return injected;
+  const apiUrl = getApiUrlFromEnv();
+  // Se há URL da API definida e não é apenas o fallback localhost, usar direto (produção)
+  if (apiUrl && apiUrl.trim() && !apiUrl.includes('localhost')) {
+    return apiUrl.replace(/\/$/, '');
+  }
   const useProxy = process.env.NEXT_PUBLIC_USE_API_PROXY === 'true';
-  return useProxy ? '/api/proxy' : getApiUrlFromEnv();
+  return useProxy ? '/api/proxy' : apiUrl || 'http://localhost:5001';
 }
 
 class ApiClient {
