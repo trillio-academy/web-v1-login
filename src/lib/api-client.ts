@@ -71,9 +71,16 @@ function getRefreshTokenSecure(): string | null {
   return null;
 }
 
+export function getApiUrlFromEnv(): string {
+  if (typeof window !== 'undefined') {
+    const w = window as unknown as { __TRILLIO_API_URL__?: string };
+    if (w.__TRILLIO_API_URL__ && w.__TRILLIO_API_URL__.trim()) return w.__TRILLIO_API_URL__.trim();
+  }
+  return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_V1_URL || 'http://localhost:5001';
+}
 /** Quando true, as chamadas vão para /api/proxy no mesmo origin (evita CORS). O backend do app repassa ao API. */
 const USE_API_PROXY = process.env.NEXT_PUBLIC_USE_API_PROXY === 'true';
-const API_URL = USE_API_PROXY ? '/api/proxy' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001');
+const API_URL = USE_API_PROXY ? '/api/proxy' : getApiUrlFromEnv();
 
 class ApiClient {
   private client: AxiosInstance;

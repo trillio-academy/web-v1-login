@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiClient } from '../lib/api-client';
+import { apiClient, getApiUrlFromEnv } from '../lib/api-client';
 
 interface RecuperarSenhaClientProps {
   url: string;
@@ -56,7 +56,7 @@ export default function RecuperarSenhaClient({ url, token }: RecuperarSenhaClien
     }
     setLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_V1_URL || 'http://localhost:5001';
+      const apiUrl = getApiUrlFromEnv();
       const response = await fetch(`${apiUrl}/app/recover/change/password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

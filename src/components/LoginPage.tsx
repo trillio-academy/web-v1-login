@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { auth } from '../lib/auth';
-import { apiClient } from '../lib/api-client';
+import { apiClient, getApiUrlFromEnv } from '../lib/api-client';
 import { useDocumentLocale } from '../lib/use-document-locale';
 import Loading from './Loading';
 
@@ -133,7 +133,7 @@ export default function LoginPage({ url, app }: LoginPageProps) {
     setRecoverLoading(true);
     setRecoverMessage('');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_V1_URL || 'http://localhost:5001';
+      const apiUrl = getApiUrlFromEnv();
       const response = await fetch(`${apiUrl}/app/cliente/${url}/recover`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -182,7 +182,7 @@ export default function LoginPage({ url, app }: LoginPageProps) {
   const corBackgroundLogin = (cliente?.corBackgroundInformacoesDeLogin || '#d4d3d3') as string;
   const imagemBackgroundLogin = (cliente?.imagemBackgroundLogin as { webPath?: string; caminho?: string } | undefined)
     ?.webPath || (cliente?.imagemBackgroundLogin as { webPath?: string; caminho?: string } | undefined)?.caminho || null;
-  const apiBaseUrl = (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_V1_URL)) || '';
+  const apiBaseUrl = (typeof window !== 'undefined' ? getApiUrlFromEnv() : '') || '';
   const rawLogoUrl =
     (cliente?.logoGrandeTelaDeLogin as { webPath?: string; caminho?: string } | undefined)?.webPath ||
     (cliente?.logoGrandeTelaDeLogin as { webPath?: string; caminho?: string } | undefined)?.caminho ||
@@ -227,9 +227,15 @@ export default function LoginPage({ url, app }: LoginPageProps) {
             {cliente?.permitirTraducao ? (
               <div className="w-full flex justify-center mb-4" role="group" aria-label="Selecionar idioma">
                 <div className="flex gap-2">
-                  <button type="button" className="w-8 h-8 rounded-full border-2 opacity-70 hover:opacity-100 transition-opacity flex items-center justify-center text-sm" style={{ borderColor: (cliente?.corFonteTelaLogin as string) || '#333333' }} title="Português" aria-label="Selecionar Português" onClick={() => { document.cookie = 'locale=pt; path=/; max-age=31536000'; window.location.reload(); }}>🇧🇷</button>
-                  <button type="button" className="w-8 h-8 rounded-full border-2 opacity-70 hover:opacity-100 transition-opacity flex items-center justify-center text-sm" style={{ borderColor: (cliente?.corFonteTelaLogin as string) || '#333333' }} title="English" aria-label="Selecionar English" onClick={() => { document.cookie = 'locale=en; path=/; max-age=31536000'; window.location.reload(); }}>🇺🇸</button>
-                  <button type="button" className="w-8 h-8 rounded-full border-2 opacity-70 hover:opacity-100 transition-opacity flex items-center justify-center text-sm" style={{ borderColor: (cliente?.corFonteTelaLogin as string) || '#333333' }} title="Español" aria-label="Selecionar Español" onClick={() => { document.cookie = 'locale=es; path=/; max-age=31536000'; window.location.reload(); }}>🇪🇸</button>
+                  <button type="button" className="w-8 h-8 rounded-full border-2 opacity-70 hover:opacity-100 transition-opacity flex items-center justify-center overflow-hidden bg-gray-100" style={{ borderColor: (cliente?.corFonteTelaLogin as string) || '#333333' }} title="Português" aria-label="Selecionar Português" onClick={() => { document.cookie = 'locale=pt; path=/; max-age=31536000'; window.location.reload(); }}>
+                    <img src="https://flagcdn.com/w40/br.png" alt="" className="w-full h-full object-cover" width={32} height={32} />
+                  </button>
+                  <button type="button" className="w-8 h-8 rounded-full border-2 opacity-70 hover:opacity-100 transition-opacity flex items-center justify-center overflow-hidden bg-gray-100" style={{ borderColor: (cliente?.corFonteTelaLogin as string) || '#333333' }} title="English" aria-label="Selecionar English" onClick={() => { document.cookie = 'locale=en; path=/; max-age=31536000'; window.location.reload(); }}>
+                    <img src="https://flagcdn.com/w40/us.png" alt="" className="w-full h-full object-cover" width={32} height={32} />
+                  </button>
+                  <button type="button" className="w-8 h-8 rounded-full border-2 opacity-70 hover:opacity-100 transition-opacity flex items-center justify-center overflow-hidden bg-gray-100" style={{ borderColor: (cliente?.corFonteTelaLogin as string) || '#333333' }} title="Español" aria-label="Selecionar Español" onClick={() => { document.cookie = 'locale=es; path=/; max-age=31536000'; window.location.reload(); }}>
+                    <img src="https://flagcdn.com/w40/es.png" alt="" className="w-full h-full object-cover" width={32} height={32} />
+                  </button>
                 </div>
               </div>
             ) : null}

@@ -2,13 +2,14 @@
 
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { getApiUrlFromEnv } from '../lib/api-client';
 
 export default function SSOPage() {
   const params = useParams();
   const url = params?.url as string;
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    const apiUrl = getApiUrlFromEnv();
     window.location.href = `${apiUrl}/app/cliente/${url}/sso`;
   }, [url]);
 

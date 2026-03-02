@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { getApiUrlFromEnv } from '../lib/api-client';
 import { useDocumentLocale } from '../lib/use-document-locale';
 import { useState } from 'react';
 
@@ -20,9 +21,7 @@ export default function ValidacaoCertificadoPage({ url }: ValidacaoCertificadoPa
     setLoading(true);
     setResultado(null);
     try {
-      const apiUrl = typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL
-        ? process.env.NEXT_PUBLIC_API_URL
-        : (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_V1_URL) || '';
+      const apiUrl = getApiUrlFromEnv();
       const res = await fetch(`${apiUrl}/app/cliente/${url}/site/certificado/validar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
