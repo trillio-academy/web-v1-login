@@ -78,9 +78,14 @@ export function getApiUrlFromEnv(): string {
   }
   return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_V1_URL || 'http://localhost:5001';
 }
-/** Quando true, as chamadas vão para /api/proxy no mesmo origin (evita CORS). O backend do app repassa ao API. */
-const USE_API_PROXY = process.env.NEXT_PUBLIC_USE_API_PROXY === 'true';
-const API_URL = USE_API_PROXY ? '/api/proxy' : getApiUrlFromEnv();
+
+/** Base URL para o client: se a API foi injetada (produção), chama a API direto; senão usa proxy ou fallback. */
+function getClientBaseUrl(): string {
+  const injected = typeof window !== 'undefined' && (window as unknown as { __TRILLIO_API_URL__?: string }).__TRILLIO_API_URL__?.trim();
+  if (injected) return injected;
+  const useProxy = process.env.NEXT_PUBLIC_USE_API_PROXY === 'true';
+  return useProxy ? '/api/proxy' : getApiUrlFromEnv();
+}
 
 class ApiClient {
   private client: AxiosInstance;
@@ -90,7 +95,7 @@ class ApiClient {
       throw new Error('ApiClient can only be used in client components');
     }
     this.client = axios.create({
-      baseURL: API_URL,
+      baseURL: getClientBaseUrl(),
       headers: { 'Content-Type': 'application/json' },
     });
 
