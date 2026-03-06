@@ -11,3 +11,5 @@ export { default as TermosDeUsoPage } from './components/TermosDeUsoPage';
 export { default as PoliticaProtecaoDadosPage } from './components/PoliticaProtecaoDadosPage';
 export { default as PoliticaPrivacidadePage } from './components/PoliticaPrivacidadePage';
 export { default as ValidacaoCertificadoPage } from './components/ValidacaoCertificadoPage';
+export { default as CertificadoResultadoPage } from './components/CertificadoResultadoPage';
+export type { CertificadoExibicao } from './components/CertificadoResultadoPage';

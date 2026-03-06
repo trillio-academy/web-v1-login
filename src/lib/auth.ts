@@ -11,13 +11,31 @@ const REFRESH_TOKEN_KEY = 'refreshToken';
 const TOKEN_STORAGE_KEY = '__trillio_token__';
 const REFRESH_TOKEN_STORAGE_KEY = '__trillio_refresh_token__';
 
+const LOG_PREFIX = '[Trillio Auth]';
+
+function isAuthDebug(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    process.env.NEXT_PUBLIC_LOG_TRILLIO_AUTH === 'true' ||
+    (window as unknown as { __TRILLIO_AUTH_DEBUG__?: boolean }).__TRILLIO_AUTH_DEBUG__ === true
+  );
+}
+
+/** Chaves exatas do localStorage (usadas em login e api-client). Export para consistência. */
+export const LS_TOKEN_KEY = `${TOKEN_STORAGE_KEY}_${TOKEN_KEY}`;
+export const LS_TOKEN_EXPIRES_KEY = `${TOKEN_STORAGE_KEY}_${TOKEN_KEY}_expires`;
+export const LS_REFRESH_KEY = `${TOKEN_STORAGE_KEY}_${REFRESH_TOKEN_KEY}`;
+export const LS_REFRESH_EXPIRES_KEY = `${TOKEN_STORAGE_KEY}_${REFRESH_TOKEN_KEY}_expires`;
+
 function getCookieDomain(): string | undefined {
   if (typeof window === 'undefined') return undefined;
   const domain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
   if (domain) return domain;
   if (window.location.hostname.endsWith('trillio.com.br')) return '.trillio.com.br';
-  // Em localhost, usar domain 'localhost' para o cookie ser compartilhado entre portas (ex.: play 8081 e business 8082)
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') return 'localhost';
+  if (window.location.hostname.endsWith('trillio.app')) return '.trillio.app';
+  // Em localhost NÃO definir domain: navegadores não persistem cookie com domain=localhost.
+  // Sem domain o cookie fica vinculado ao host exato (ex.: localhost:8081) e é enviado nas requisições.
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') return undefined;
   return undefined;
 }
 
@@ -129,25 +147,76 @@ function removeCookieSecure(name: string): void {
 
 export const auth = {
   async login(url: string, credentials: LoginCredentials): Promise<{ token: string; refreshToken?: string }> {
+    const debug = isAuthDebug();
     const { apiClient } = await import('./api-client');
     const loginEndpoint = `/app/cliente/${url}/login`;
+    if (debug) console.log(LOG_PREFIX, 'login: POST', loginEndpoint);
     const response = await apiClient.post(loginEndpoint, credentials);
-    const { token, refreshToken } = response.data;
+    console.log(LOG_PREFIX, 'login resposta da requisição', { status: response.status, data: response.data });
+    const raw = response.data ?? {};
+    const data = raw.data ?? raw;
+    const token =
+      (typeof data.token === 'string' && data.token) ||
+      (typeof data.access_token === 'string' && data.access_token) ||
+      (typeof raw.token === 'string' && raw.token) ||
+      (typeof raw.access_token === 'string' && raw.access_token) ||
+      null;
+    const refreshToken =
+      (typeof data.refreshToken === 'string' && data.refreshToken) ||
+      (typeof data.refresh_token === 'string' && data.refresh_token) ||
+      (typeof raw.refreshToken === 'string' && raw.refreshToken) ||
+      (typeof raw.refresh_token === 'string' && raw.refresh_token) ||
+      undefined;
+
+    if (debug) console.log(LOG_PREFIX, 'login: response', { hasToken: !!token, hasRefresh: !!refreshToken, responseKeys: Object.keys(raw) });
 
     if (!token) throw new Error('Token não foi retornado pelo servidor');
 
-    const tokenSaved = setCookieSecure(TOKEN_KEY, token, 3);
-    if (refreshToken) setCookieSecure(REFRESH_TOKEN_KEY, refreshToken, 6);
+    const exp = Date.now() + 3 * 24 * 60 * 60 * 1000;
+    const refExp = Date.now() + 6 * 24 * 60 * 60 * 1000;
 
-    if (!tokenSaved) throw new Error('Falha ao salvar token de autenticação');
+    // 1) Salvar no localStorage (fonte principal para o api-client evitar 401)
+    const writeStorage = () => {
+      localStorage.setItem(LS_TOKEN_KEY, token);
+      localStorage.setItem(LS_TOKEN_EXPIRES_KEY, String(exp));
+      if (refreshToken) {
+        localStorage.setItem(LS_REFRESH_KEY, refreshToken);
+        localStorage.setItem(LS_REFRESH_EXPIRES_KEY, String(refExp));
+      }
+    };
+    try {
+      writeStorage();
+      let readBack = localStorage.getItem(LS_TOKEN_KEY);
+      if (readBack !== token) {
+        writeStorage();
+        readBack = localStorage.getItem(LS_TOKEN_KEY);
+      }
+      if (readBack !== token) {
+        console.error(LOG_PREFIX, 'login: token não persistiu no localStorage', { key: LS_TOKEN_KEY, len: token.length });
+        throw new Error('Falha ao salvar sessão. O token não foi gravado no navegador.');
+      }
+      if (debug) console.log(LOG_PREFIX, 'login: localStorage escrito e verificado', { key: LS_TOKEN_KEY, tokenLen: token.length });
+    } catch (e) {
+      console.warn(LOG_PREFIX, 'login: localStorage write failed', e);
+      throw new Error('Falha ao salvar sessão no navegador. Verifique se o localStorage está disponível.');
+    }
+
+    setCookieSecure(TOKEN_KEY, token, 3);
+    if (refreshToken) setCookieSecure(REFRESH_TOKEN_KEY, refreshToken, 6);
+    if (debug) console.log(LOG_PREFIX, 'login: sucesso, cookie setado');
 
     return { token, refreshToken };
   },
 
   logout(url?: string): void {
+    if (isAuthDebug()) console.log(LOG_PREFIX, 'logout: limpando sessão');
     removeCookieSecure(TOKEN_KEY);
     removeCookieSecure(REFRESH_TOKEN_KEY);
     try {
+      localStorage.removeItem(LS_TOKEN_KEY);
+      localStorage.removeItem(LS_TOKEN_EXPIRES_KEY);
+      localStorage.removeItem(LS_REFRESH_KEY);
+      localStorage.removeItem(LS_REFRESH_EXPIRES_KEY);
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
     } catch (e) {
@@ -172,12 +241,35 @@ export const auth = {
     }
   },
 
+  /** Mesma fonte que o api-client: localStorage primeiro, depois cookie. Evita hadAuth: false quando o token está só no localStorage. */
   getToken(): string | undefined {
+    if (typeof document === 'undefined') return undefined;
+    try {
+      const stored = localStorage.getItem(LS_TOKEN_KEY);
+      const expiresStr = localStorage.getItem(LS_TOKEN_EXPIRES_KEY);
+      if (stored) {
+        const exp = expiresStr ? parseInt(expiresStr, 10) : 0;
+        if (!exp || Date.now() < exp) return stored;
+      }
+    } catch {
+      // ignore
+    }
     const token = getCookieSecure(TOKEN_KEY);
     return token || undefined;
   },
 
   getRefreshToken(): string | undefined {
+    if (typeof document === 'undefined') return undefined;
+    try {
+      const stored = localStorage.getItem(LS_REFRESH_KEY);
+      const expiresStr = localStorage.getItem(LS_REFRESH_EXPIRES_KEY);
+      if (stored) {
+        const exp = expiresStr ? parseInt(expiresStr, 10) : 0;
+        if (!exp || Date.now() < exp) return stored;
+      }
+    } catch {
+      // ignore
+    }
     const token = getCookieSecure(REFRESH_TOKEN_KEY);
     return token || undefined;
   },

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { auth } from '../lib/auth';
+import { auth, LS_TOKEN_KEY, LS_TOKEN_EXPIRES_KEY } from '../lib/auth';
 import { apiClient, getApiUrlFromEnv } from '../lib/api-client';
 import { useDocumentLocale } from '../lib/use-document-locale';
 import Loading from './Loading';
@@ -165,9 +165,15 @@ export default function LoginPage({ url, app }: LoginPageProps) {
       if (!token) throw new Error('Token não foi retornado pelo servidor');
       const user = auth.decodeToken(token);
       if (!user) throw new Error('Erro ao decodificar token');
-      await new Promise((r) => setTimeout(r, 200));
       const roles = user.roles || [];
       const redirect = getRedirectAfterLogin(app, url, roles);
+      await new Promise((r) => setTimeout(r, 100));
+      const stored = typeof window !== 'undefined' ? localStorage.getItem(LS_TOKEN_KEY) : null;
+      if (!stored || stored !== token) {
+        localStorage.setItem(LS_TOKEN_KEY, token);
+        localStorage.setItem(LS_TOKEN_EXPIRES_KEY, String(Date.now() + 3 * 24 * 60 * 60 * 1000));
+        await new Promise((r) => setTimeout(r, 80));
+      }
       window.location.href = redirect;
     } catch (err: unknown) {
       const key = getFriendlyLoginErrorKey(err);
