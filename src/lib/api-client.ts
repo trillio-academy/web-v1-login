@@ -135,23 +135,25 @@ export function getApiUrlFromEnv(): string {
 /** URL padrão da API em produção quando env não está disponível (ex.: build/cache no Amplify). */
 const PRODUCTION_API_URL = 'https://api-x.trillio.app';
 
-/** Base URL para chamadas à API: usa proxy quando configurado (evita CORS em dev). Mesma lógica do ApiClient. */
+/** Base URL para chamadas à API: usa proxy quando configurado (evita CORS em dev e em produção). */
 export function getClientBaseUrl(): string {
+  // Se o app pediu uso do proxy, sempre usar same-origin /api/proxy (evita CORS; o servidor Next repassa ao backend).
+  if (process.env.NEXT_PUBLIC_USE_API_PROXY === 'true') {
+    return '/api/proxy';
+  }
   let apiUrl = getApiUrlFromEnv();
-  // Em host de produção (play/business .trillio.app), se env veio vazia, usar URL padrão para evitar proxy
+  // Em host de produção (play/business .trillio.app), se env veio vazia, usar URL padrão
   if (typeof window !== 'undefined' && window.location?.hostname?.includes('trillio.app') && (!apiUrl || apiUrl.includes('localhost'))) {
     apiUrl = PRODUCTION_API_URL;
   }
   if (apiUrl && apiUrl.trim() && !apiUrl.includes('localhost')) {
     return apiUrl.replace(/\/$/, '');
   }
-  // Em dev (front em localhost + API em localhost): usar proxy para evitar resposta opaca por CORS.
-  // No Network aparece 200 + JSON, mas o JS não consegue ler o body se for cross-origin sem CORS.
+  // Em dev (front em localhost + API em localhost): usar proxy para evitar resposta opaca por CORS
   const useProxy =
-    process.env.NEXT_PUBLIC_USE_API_PROXY === 'true' ||
-    (typeof window !== 'undefined' &&
-      /^localhost|127\.0\.0\.1$/i.test(window.location?.hostname ?? '') &&
-      apiUrl?.includes('localhost'));
+    typeof window !== 'undefined' &&
+    /^localhost|127\.0\.0\.1$/i.test(window.location?.hostname ?? '') &&
+    apiUrl?.includes('localhost');
   return useProxy ? '/api/proxy' : apiUrl || 'http://localhost:5001';
 }
 
