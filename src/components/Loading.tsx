@@ -6,6 +6,8 @@ export interface LoadingProps {
   size?: 'small' | 'medium' | 'large';
   text?: string;
   fullScreen?: boolean;
+  /** Quando true (padrão), fullScreen usa var(--loading-overlay-bg). Quando false, usa fundo escuro fixo (ex.: dentro de atividade). */
+  useThemeBackground?: boolean;
 }
 
 const sizeMap = {
@@ -29,17 +31,26 @@ const TrillioLogoSvg = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export default function Loading({ size = 'medium', text = 'Carregando...', fullScreen = false }: LoadingProps) {
+const LOADING_BG_DARK = '#0d1117';
+
+export default function Loading({ size = 'medium', text = 'Carregando...', fullScreen = false, useThemeBackground = true }: LoadingProps) {
   const currentSize = sizeMap[size];
   const s = currentSize.spinner;
+
+  const fullScreenStyle = fullScreen
+    ? {
+        backgroundColor: useThemeBackground ? 'var(--loading-overlay-bg, #0d1117)' : LOADING_BG_DARK,
+      }
+    : undefined;
 
   return (
     <div
       className={
         fullScreen
-          ? 'flex flex-col justify-center items-center min-h-screen bg-[#0d1117] text-[#f0f6fc]'
+          ? 'flex flex-col justify-center items-center min-h-screen text-[#f0f6fc]'
           : `flex flex-col justify-center items-center text-center ${currentSize.container}`
       }
+      style={fullScreenStyle}
     >
       <div
         className="relative inline-block flex-shrink-0"
