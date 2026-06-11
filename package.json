@@ -14,6 +14,11 @@
       "types": "./src/server/auth-set-token.ts",
       "import": "./src/server/auth-set-token.ts",
       "require": "./src/server/auth-set-token.ts"
+    },
+    "./src/server/auth-set-token": {
+      "types": "./src/server/auth-set-token.ts",
+      "import": "./src/server/auth-set-token.ts",
+      "require": "./src/server/auth-set-token.ts"
     }
   },
   "scripts": {},
