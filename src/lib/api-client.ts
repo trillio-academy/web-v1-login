@@ -269,10 +269,15 @@ class ApiClient {
             console.warn(LOG_PREFIX, '401 de autenticação — encerrando sessão', { url: requestUrl.slice(-80) });
           }
           if (typeof window !== 'undefined') {
-            const isLoginPage = window.location.pathname.includes('/login');
-            const pathParts = window.location.pathname.split('/').filter(Boolean);
+            const path = window.location.pathname;
+            const isAuthPublicPage =
+              path.includes('/login') ||
+              path.includes('/sso') ||
+              path.includes('/logout') ||
+              path.includes('/auth/');
+            const pathParts = path.split('/').filter(Boolean);
             const urlCliente = pathParts[0] || (document.referrer ? new URL(document.referrer).pathname.split('/').filter(Boolean)[0] : null);
-            if (!isLoginPage && !isPublicRequestUrl(requestUrl)) {
+            if (!isAuthPublicPage && !isPublicRequestUrl(requestUrl)) {
               const { auth } = await import('./auth');
               auth.logout(urlCliente ?? undefined, { preserveReturnUrl: true });
             }

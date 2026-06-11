@@ -160,6 +160,10 @@ export default function LoginPage({
     const redirect = typeof window !== 'undefined'
       ? getSafeRedirectUrl(new URLSearchParams(window.location.search).get('redirect'))
       : null;
+    if (redirect && /\/sso(\/|$|\?)/i.test(redirect)) {
+      window.location.replace(`/${url}/sso`);
+      return;
+    }
     let href = `/${url}/sso`;
     if (redirect) href += `?redirect=${encodeURIComponent(redirect)}`;
     window.location.replace(href);
