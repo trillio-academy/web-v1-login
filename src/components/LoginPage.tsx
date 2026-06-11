@@ -179,7 +179,6 @@ export default function LoginPage({
 
   const isLoginPorSSO = Boolean(cliente?.isLoginPorSSO);
   const isLoginExclusivamentePorSSO = Boolean(cliente?.isLoginExclusivamentePorSSO);
-  const clienteNome = (cliente?.nome as string) || url;
 
   const handleRecoverPassword = () => {
     setShowRecoverModal(true);
@@ -468,9 +467,16 @@ export default function LoginPage({
                 </button>
               </div>
               {isLoginPorSSO && !isLoginExclusivamentePorSSO ? (
-                <div className="text-center">
-                  <a href={buildSsoHref()} className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
-                    {t('login.ssoEnter').replace('{{name}}', clienteNome)}
+                <div>
+                  <a
+                    href={buildSsoHref()}
+                    className="w-full flex justify-center items-center py-3 px-4 border-2 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    style={{
+                      borderColor: corPrimaria === '#000000' ? '#333' : corPrimaria,
+                      color: corPrimaria === '#000000' ? '#333' : corPrimaria,
+                    }}
+                  >
+                    {t('login.ssoButton')}
                   </a>
                 </div>
               ) : null}
