@@ -224,12 +224,12 @@ export default function LoginPage({ url, app }: LoginPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={gradientStyle}>
-      <div className="w-full max-w-6xl mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row shadow-2xl rounded-lg overflow-hidden" style={{ maxHeight: '608px' }}>
+    <div className="min-h-screen flex items-start md:items-center justify-center py-4 md:py-8" style={gradientStyle}>
+      <div className="w-full max-w-6xl mx-auto px-4">
+        <div className="flex flex-col-reverse md:flex-row shadow-2xl rounded-lg overflow-hidden md:max-h-[608px]">
           <div
-            className="w-full md:w-2/5 flex flex-col justify-between items-center px-8 md:px-12 py-12"
-            style={{ ...cardRightStyle, minHeight: '608px', borderRadius: '5px 0 0 5px' }}
+            className="w-full md:w-2/5 flex flex-col justify-between items-center px-4 py-6 sm:px-8 md:px-12 md:py-12 md:min-h-[608px] rounded-b-lg md:rounded-none md:rounded-l-lg"
+            style={cardRightStyle}
           >
             {cliente?.permitirTraducao ? (
               <div className="w-full flex justify-center mb-4" role="group" aria-label="Selecionar idioma">
@@ -246,7 +246,7 @@ export default function LoginPage({ url, app }: LoginPageProps) {
                 </div>
               </div>
             ) : null}
-            <div className="mt-8 mb-8 flex justify-center min-h-[120px] items-center">
+            <div className="mt-4 mb-4 md:mt-8 md:mb-8 flex justify-center min-h-[80px] md:min-h-[120px] items-center">
               {logoUrl && !logoError ? (
                 <a href="https://trillio.com.br/" target="_blank" rel="noopener noreferrer" className="flex justify-center">
                   <img src={logoUrl} alt={(cliente?.nome as string) || 'Trillio'} className="w-full max-w-[300px] h-auto object-contain" onError={() => setLogoError(true)} />
@@ -279,16 +279,16 @@ export default function LoginPage({ url, app }: LoginPageProps) {
               </div>
             ) : null}
           </div>
-          <div className="w-full md:w-3/5 flex flex-col justify-center px-8 md:px-12 py-12 bg-white" style={{ borderRadius: '0 5px 5px 0' }}>
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">{t('login.title')}</h2>
+          <div className="w-full md:w-3/5 flex flex-col justify-center px-4 py-6 sm:px-8 md:px-12 md:py-12 bg-white rounded-t-lg md:rounded-none md:rounded-r-lg">
+            <div className="mb-6 md:mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{t('login.title')}</h2>
             </div>
             <form className="space-y-6" onSubmit={handleSubmit}>
               {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
               <div className="space-y-4">
                 <div>
                   <label htmlFor="login" className="block text-sm font-medium text-gray-700 mb-1">{t('login.loginLabel')}</label>
-                  <input id="login" name="login" type="text" required className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900" placeholder={t('login.loginPlaceholder')} value={login} onChange={(e) => setLogin(e.target.value)} />
+                  <input id="login" name="login" type="text" required className="w-full px-4 py-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900" placeholder={t('login.loginPlaceholder')} value={login} onChange={(e) => setLogin(e.target.value)} />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1">
@@ -301,7 +301,7 @@ export default function LoginPage({ url, app }: LoginPageProps) {
                       name="senha"
                       type={showPassword ? 'text' : 'password'}
                       required
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                      className="w-full px-4 py-3 pr-12 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                       placeholder={t('login.passwordPlaceholder')}
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
