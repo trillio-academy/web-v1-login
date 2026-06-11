@@ -13,6 +13,11 @@ export type LoginApp = 'play' | 'business';
 interface LoginPageProps {
   url: string;
   app: LoginApp;
+  /** Mobile: abre direto no formulário (ex.: após tela de boas-vindas no app play). */
+  startOnLoginForm?: boolean;
+  /** Mobile: renderiza só a tela de boas-vindas e chama onMobileContinue ao tocar em Continuar. */
+  mobileWelcomeOnly?: boolean;
+  onMobileContinue?: () => void;
 }
 
 function getDefaultRedirectAfterLogin(app: LoginApp, url: string, roles: string[]): string {
@@ -49,7 +54,13 @@ function getFriendlyLoginErrorKey(err: unknown): string {
   return 'login.errorGeneric';
 }
 
-export default function LoginPage({ url, app }: LoginPageProps) {
+export default function LoginPage({
+  url,
+  app,
+  startOnLoginForm = false,
+  mobileWelcomeOnly = false,
+  onMobileContinue,
+}: LoginPageProps) {
   const { t } = useDocumentLocale();
   const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
@@ -64,17 +75,21 @@ export default function LoginPage({ url, app }: LoginPageProps) {
   const [recoverMessage, setRecoverMessage] = useState('');
   const [logoError, setLogoError] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showMobileLogin, setShowMobileLogin] = useState(false);
+  const [showMobileLogin, setShowMobileLogin] = useState(startOnLoginForm);
 
   useEffect(() => {
-    setShowMobileLogin(false);
-  }, [url]);
+    setShowMobileLogin(startOnLoginForm);
+  }, [url, startOnLoginForm]);
 
   useEffect(() => {
     setLogoError(false);
   }, [cliente?.logoGrandeTelaDeLogin, cliente?.logoTelaDeLogin, cliente?.logo]);
 
   const handleContinueToLogin = () => {
+    if (mobileWelcomeOnly && onMobileContinue) {
+      onMobileContinue();
+      return;
+    }
     setShowMobileLogin(true);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -247,10 +262,10 @@ export default function LoginPage({ url, app }: LoginPageProps) {
           </div>
         </div>
       ) : null}
-      <div className="mt-4 mb-4 md:mt-8 md:mb-8 flex justify-center min-h-[80px] md:min-h-[120px] items-center">
+      <div className={`flex justify-center items-center ${options?.showContinueButton ? 'my-6' : 'mt-4 mb-4 md:mt-8 md:mb-8 min-h-[80px] md:min-h-[120px]'}`}>
         {logoUrl && !logoError ? (
           <a href="https://trillio.com.br/" target="_blank" rel="noopener noreferrer" className="flex justify-center">
-            <img src={logoUrl} alt={(cliente?.nome as string) || 'Trillio'} className="w-full max-w-[300px] h-auto object-contain" onError={() => setLogoError(true)} />
+            <img src={logoUrl} alt={(cliente?.nome as string) || 'Trillio'} className="w-full max-w-[260px] md:max-w-[300px] h-auto object-contain" onError={() => setLogoError(true)} />
           </a>
         ) : (
           <span className="text-2xl font-bold tracking-tight opacity-90" style={{ color: corFonteTelaLogin }}>
@@ -258,7 +273,7 @@ export default function LoginPage({ url, app }: LoginPageProps) {
           </span>
         )}
       </div>
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+      <div className={`${options?.showContinueButton ? '' : 'flex-1'} flex flex-col items-center justify-center text-center px-4`}>
         <p className="text-xl md:text-2xl font-bold leading-relaxed" style={{ color: corFonteTelaLogin }}>
           {cliente?.textoTelaLogin ? (cliente.textoTelaLogin as string) : t('login.welcome')}
         </p>
@@ -266,7 +281,19 @@ export default function LoginPage({ url, app }: LoginPageProps) {
           {app === 'play' ? t('login.play') : t('login.business')}
         </p>
       </div>
-      {cliente?.permitirRedesSociais ? (
+      {options?.showContinueButton ? (
+        <div className="w-full mt-6 px-2">
+          <button
+            type="button"
+            onClick={handleContinueToLogin}
+            className="w-full py-3.5 px-4 border border-transparent text-base font-semibold rounded-md text-white shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+            style={primaryButtonStyle}
+          >
+            {t('login.continue')}
+          </button>
+        </div>
+      ) : null}
+      {!options?.showContinueButton && cliente?.permitirRedesSociais ? (
         <div className="flex gap-6 mt-8">
           <a href="https://www.facebook.com/trillioacademy" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-80" style={{ background: 'linear-gradient(to right, rgb(239, 137, 70) 0%, rgb(222, 52, 109) 100%)' }}>
             <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
@@ -277,18 +304,6 @@ export default function LoginPage({ url, app }: LoginPageProps) {
           <a href="https://www.linkedin.com/company/trillioacademy/" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-80" style={{ background: 'linear-gradient(to right, rgb(239, 137, 70) 0%, rgb(222, 52, 109) 100%)' }}>
             <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
           </a>
-        </div>
-      ) : null}
-      {options?.showContinueButton ? (
-        <div className="w-full mt-8 px-2 pb-2">
-          <button
-            type="button"
-            onClick={handleContinueToLogin}
-            className="w-full py-3 px-4 border border-transparent text-base font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-            style={primaryButtonStyle}
-          >
-            {t('login.continue')}
-          </button>
         </div>
       ) : null}
     </>
@@ -304,12 +319,22 @@ export default function LoginPage({ url, app }: LoginPageProps) {
     );
   }
 
+  if (mobileWelcomeOnly) {
+    return (
+      <div className="min-h-screen flex items-center justify-center py-4 px-4 md:hidden" style={gradientStyle}>
+        <div className="w-full max-w-lg shadow-2xl rounded-lg px-4 py-8" style={cardRightStyle}>
+          {renderBrandingPanel({ showContinueButton: true })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-start md:items-center justify-center py-4 md:py-8" style={gradientStyle}>
       <div className="w-full max-w-6xl mx-auto px-4">
         {!showMobileLogin ? (
           <div
-            className="md:hidden shadow-2xl rounded-lg overflow-hidden min-h-[calc(100dvh-2rem)] flex flex-col justify-between items-center px-4 py-8"
+            className="md:hidden shadow-2xl rounded-lg px-4 py-8 w-full max-w-lg mx-auto"
             style={cardRightStyle}
           >
             {renderBrandingPanel({ showContinueButton: true })}
