@@ -86,7 +86,22 @@ export default function LoginPage({
     setLogoError(false);
   }, [cliente?.logoGrandeTelaDeLogin, cliente?.logoTelaDeLogin, cliente?.logo]);
 
+  const buildSsoHref = () => {
+    const redirect = typeof window !== 'undefined'
+      ? getSafeRedirectUrl(new URLSearchParams(window.location.search).get('redirect'))
+      : null;
+    if (!redirect) return `/${url}/sso`;
+    return `/${url}/sso?redirect=${encodeURIComponent(redirect)}`;
+  };
+
+  const isLoginPorSSO = Boolean(cliente?.isLoginPorSSO);
+  const isLoginExclusivamentePorSSO = Boolean(cliente?.isLoginExclusivamentePorSSO);
+
   const handleContinueToLogin = () => {
+    if (isLoginExclusivamentePorSSO) {
+      window.location.href = buildSsoHref();
+      return;
+    }
     if (mobileWelcomeOnly && onMobileContinue) {
       onMobileContinue();
       return;
@@ -154,31 +169,6 @@ export default function LoginPage({
       )
       .finally(() => setLoadingCliente(false));
   }, [url, checkingAuth]);
-
-  useEffect(() => {
-    if (loadingCliente || !cliente?.isLoginExclusivamentePorSSO) return;
-    const redirect = typeof window !== 'undefined'
-      ? getSafeRedirectUrl(new URLSearchParams(window.location.search).get('redirect'))
-      : null;
-    if (redirect && /\/sso(\/|$|\?)/i.test(redirect)) {
-      window.location.replace(`/${url}/sso`);
-      return;
-    }
-    let href = `/${url}/sso`;
-    if (redirect) href += `?redirect=${encodeURIComponent(redirect)}`;
-    window.location.replace(href);
-  }, [cliente, loadingCliente, url]);
-
-  const buildSsoHref = () => {
-    const redirect = typeof window !== 'undefined'
-      ? getSafeRedirectUrl(new URLSearchParams(window.location.search).get('redirect'))
-      : null;
-    if (!redirect) return `/${url}/sso`;
-    return `/${url}/sso?redirect=${encodeURIComponent(redirect)}`;
-  };
-
-  const isLoginPorSSO = Boolean(cliente?.isLoginPorSSO);
-  const isLoginExclusivamentePorSSO = Boolean(cliente?.isLoginExclusivamentePorSSO);
 
   const handleRecoverPassword = () => {
     setShowRecoverModal(true);
@@ -324,7 +314,7 @@ export default function LoginPage({
             className="w-full py-3.5 px-4 border border-transparent text-base font-semibold rounded-md text-white shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
             style={primaryButtonStyle}
           >
-            {t('login.continue')}
+            {isLoginExclusivamentePorSSO ? t('login.ssoButton') : t('login.continue')}
           </button>
         </div>
       ) : null}
@@ -395,8 +385,24 @@ export default function LoginPage({
               {t('login.back')}
             </button>
             <div className="mb-6 md:mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{t('login.title')}</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                {isLoginExclusivamentePorSSO ? t('login.ssoButton') : t('login.title')}
+              </h2>
+              {isLoginExclusivamentePorSSO ? (
+                <p className="text-sm text-gray-600 mt-2">{t('login.ssoOnlyHint')}</p>
+              ) : null}
             </div>
+            {isLoginExclusivamentePorSSO ? (
+              <div className="space-y-6">
+                <a
+                  href={buildSsoHref()}
+                  className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent text-sm font-semibold rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                  style={primaryButtonStyle}
+                >
+                  {t('login.ssoButton')}
+                </a>
+              </div>
+            ) : (
             <form className="space-y-6" onSubmit={handleSubmit}>
               {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
               <div className="space-y-4">
@@ -407,9 +413,7 @@ export default function LoginPage({
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label htmlFor="senha" className="block text-sm font-medium text-gray-700">{t('login.password')}</label>
-                    {!isLoginExclusivamentePorSSO ? (
-                      <a href="#" onClick={(e) => { e.preventDefault(); handleRecoverPassword(); }} className="text-sm text-blue-600 hover:text-blue-800 hover:underline">{t('login.forgotPassword')}</a>
-                    ) : null}
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleRecoverPassword(); }} className="text-sm text-blue-600 hover:text-blue-800 hover:underline">{t('login.forgotPassword')}</a>
                   </div>
                   <div className="relative">
                     <input
@@ -466,7 +470,7 @@ export default function LoginPage({
                   )}
                 </button>
               </div>
-              {isLoginPorSSO && !isLoginExclusivamentePorSSO ? (
+              {isLoginPorSSO ? (
                 <div>
                   <a
                     href={buildSsoHref()}
@@ -486,6 +490,7 @@ export default function LoginPage({
                 </a>
               </div>
             </form>
+            )}
             <div className="mt-8 pt-6 border-t border-gray-200 text-center text-xs text-gray-500 space-y-1">
               <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
                 <Link href={url ? `/${url}/validacao-certificado` : '#'} className="hover:underline">{t('login.certificateValidation')}</Link>
