@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { auth, LS_TOKEN_KEY, LS_TOKEN_EXPIRES_KEY } from '../lib/auth';
 import { apiClient, getApiUrlFromEnv } from '../lib/api-client';
-import { resolvePostLoginRedirect } from '../lib/redirect';
+import { getSafeRedirectUrl, resolvePostLoginRedirect } from '../lib/redirect';
+import { resolvePostLoginDestination, resolvePlayPostLoginPath } from '../lib/post-login';
 import { useDocumentLocale } from '../lib/use-document-locale';
 import Loading from './Loading';
 
@@ -107,7 +108,11 @@ export default function LoginPage({
       if (!auth.isTokenExpired(token)) {
         const user = auth.decodeToken(token);
         const roles = user?.roles || [];
-        const redirect = getRedirectWhenAlreadyAuth(app, url, roles);
+        const defaultPath = getDefaultRedirectAfterLogin(app, url, roles);
+        const redirect =
+          app === 'play'
+            ? await resolvePlayPostLoginPath(url, defaultPath)
+            : getRedirectWhenAlreadyAuth(app, url, roles);
         window.location.replace(redirect);
         return;
       }
@@ -116,7 +121,11 @@ export default function LoginPage({
         await apiClient.get(`/app/cliente/${url}/site/home?getClientePublicData=true`);
         const user = auth.decodeToken(token);
         const roles = user?.roles || [];
-        const redirect = getRedirectWhenAlreadyAuth(app, url, roles);
+        const defaultPath = getDefaultRedirectAfterLogin(app, url, roles);
+        const redirect =
+          app === 'play'
+            ? await resolvePlayPostLoginPath(url, defaultPath)
+            : getRedirectWhenAlreadyAuth(app, url, roles);
         window.location.replace(redirect);
       } catch (err: unknown) {
         const status = err && typeof err === 'object' && 'response' in err ? (err as { response?: { status?: number } }).response?.status : undefined;
@@ -145,6 +154,28 @@ export default function LoginPage({
       )
       .finally(() => setLoadingCliente(false));
   }, [url, checkingAuth]);
+
+  useEffect(() => {
+    if (loadingCliente || !cliente?.isLoginExclusivamentePorSSO) return;
+    const redirect = typeof window !== 'undefined'
+      ? getSafeRedirectUrl(new URLSearchParams(window.location.search).get('redirect'))
+      : null;
+    let href = `/${url}/sso`;
+    if (redirect) href += `?redirect=${encodeURIComponent(redirect)}`;
+    window.location.replace(href);
+  }, [cliente, loadingCliente, url]);
+
+  const buildSsoHref = () => {
+    const redirect = typeof window !== 'undefined'
+      ? getSafeRedirectUrl(new URLSearchParams(window.location.search).get('redirect'))
+      : null;
+    if (!redirect) return `/${url}/sso`;
+    return `/${url}/sso?redirect=${encodeURIComponent(redirect)}`;
+  };
+
+  const isLoginPorSSO = Boolean(cliente?.isLoginPorSSO);
+  const isLoginExclusivamentePorSSO = Boolean(cliente?.isLoginExclusivamentePorSSO);
+  const clienteNome = (cliente?.nome as string) || url;
 
   const handleRecoverPassword = () => {
     setShowRecoverModal(true);
@@ -194,7 +225,8 @@ export default function LoginPage({
       const user = auth.decodeToken(token);
       if (!user) throw new Error('Erro ao decodificar token');
       const roles = user.roles || [];
-      const redirect = getRedirectAfterLogin(app, url, roles);
+      const defaultRedirect = getRedirectAfterLogin(app, url, roles);
+      const redirect = await resolvePostLoginDestination(app, url, roles, defaultRedirect);
       await new Promise((r) => setTimeout(r, 100));
       const stored = typeof window !== 'undefined' ? localStorage.getItem(LS_TOKEN_KEY) : null;
       if (!stored || stored !== token) {
@@ -372,7 +404,9 @@ export default function LoginPage({
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label htmlFor="senha" className="block text-sm font-medium text-gray-700">{t('login.password')}</label>
-                    <a href="#" onClick={(e) => { e.preventDefault(); handleRecoverPassword(); }} className="text-sm text-blue-600 hover:text-blue-800 hover:underline">{t('login.forgotPassword')}</a>
+                    {!isLoginExclusivamentePorSSO ? (
+                      <a href="#" onClick={(e) => { e.preventDefault(); handleRecoverPassword(); }} className="text-sm text-blue-600 hover:text-blue-800 hover:underline">{t('login.forgotPassword')}</a>
+                    ) : null}
                   </div>
                   <div className="relative">
                     <input
@@ -429,6 +463,13 @@ export default function LoginPage({
                   )}
                 </button>
               </div>
+              {isLoginPorSSO && !isLoginExclusivamentePorSSO ? (
+                <div className="text-center">
+                  <a href={buildSsoHref()} className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                    {t('login.ssoEnter').replace('{{name}}', clienteNome)}
+                  </a>
+                </div>
+              ) : null}
               <div className="mt-4 text-center">
                 <a href={`/${url}/autocadastro`} className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
                   {t('login.noAccount')}

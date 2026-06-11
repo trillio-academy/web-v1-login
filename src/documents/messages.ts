@@ -64,6 +64,8 @@ export const documentMessages = {
       errorNotFound: 'Serviço de login não encontrado. Tente novamente mais tarde.',
       errorServer: 'Erro no servidor. Tente novamente em alguns instantes.',
       errorGeneric: 'Não foi possível entrar. Verifique seu login e senha e tente novamente.',
+      ssoEnter: 'Entrar por {{name}}',
+      ssoRedirecting: 'Redirecionando para SSO...',
     },
   },
   en: {
@@ -127,6 +129,8 @@ export const documentMessages = {
       errorNotFound: 'Login service not found. Please try again later.',
       errorServer: 'Server error. Please try again in a moment.',
       errorGeneric: 'Could not sign in. Check your login and password and try again.',
+      ssoEnter: 'Sign in with {{name}}',
+      ssoRedirecting: 'Redirecting to SSO...',
     },
   },
   es: {
@@ -190,6 +194,8 @@ export const documentMessages = {
       errorNotFound: 'Servicio de login no encontrado. Intente más tarde.',
       errorServer: 'Error en el servidor. Intente en unos momentos.',
       errorGeneric: 'No se pudo entrar. Verifique su usuario y contraseña e intente de nuevo.',
+      ssoEnter: 'Entrar con {{name}}',
+      ssoRedirecting: 'Redirigiendo a SSO...',
     },
   },
 } as const;

@@ -9,6 +9,11 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts",
       "require": "./src/index.ts"
+    },
+    "./server/auth-set-token": {
+      "types": "./src/server/auth-set-token.ts",
+      "import": "./src/server/auth-set-token.ts",
+      "require": "./src/server/auth-set-token.ts"
     }
   },
   "scripts": {},
