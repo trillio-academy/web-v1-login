@@ -26,7 +26,7 @@ function getTrustedOrigins(): string[] {
         // ignore
       }
     });
-  return [...origins];
+  return Array.from(origins);
 }
 
 /** Valida redirect contra open redirect; retorna path+search (relativo) ou URL absoluta confiável. */
