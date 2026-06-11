@@ -87,6 +87,44 @@ function sanitizeRedirectUrl(redirectUrl: string | null, request: NextRequest): 
   return target.replace(/\?inlineAuth=[^&]*&?/g, '').replace(/&inlineAuth=[^&]*/g, '').replace(/\?$/, '');
 }
 
+async function parseRequestBody(request: NextRequest): Promise<Record<string, unknown>> {
+  const contentType = (request.headers.get('content-type') || '').toLowerCase();
+
+  if (contentType.includes('application/json')) {
+    try {
+      return (await request.json()) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  }
+
+  if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
+    try {
+      const formData = await request.formData();
+      return {
+        token: formData.get('token'),
+        refreshToken: formData.get('refreshToken'),
+        redirectUrl: formData.get('redirectUrl'),
+      };
+    } catch {
+      // fallback abaixo
+    }
+  }
+
+  try {
+    const text = await request.text();
+    if (!text.trim()) return {};
+    const params = new URLSearchParams(text);
+    return {
+      token: params.get('token'),
+      refreshToken: params.get('refreshToken'),
+      redirectUrl: params.get('redirectUrl'),
+    };
+  } catch {
+    return {};
+  }
+}
+
 export async function handleAuthSetTokenOptions(request: NextRequest) {
   const origin = request.headers.get('origin') || request.headers.get('referer') || '';
   return new NextResponse(null, { status: 204, headers: buildCorsHeaders(origin) });
@@ -100,17 +138,7 @@ export async function handleAuthSetTokenPost(request: NextRequest) {
     return NextResponse.json({ error: 'Origem não permitida' }, { status: 403, headers });
   }
 
-  let body: Record<string, unknown> = {};
-  try {
-    body = await request.json();
-  } catch {
-    const formData = await request.formData();
-    body = {
-      token: formData.get('token'),
-      refreshToken: formData.get('refreshToken'),
-      redirectUrl: formData.get('redirectUrl'),
-    };
-  }
+  const body = await parseRequestBody(request);
 
   const token = String(body.token || request.nextUrl.searchParams.get('token') || '');
   const refreshToken = String(body.refreshToken || request.nextUrl.searchParams.get('refreshToken') || '');
@@ -130,7 +158,7 @@ export async function handleAuthSetTokenPost(request: NextRequest) {
       ? process.env.NEXT_PUBLIC_COOKIE_DOMAIN
       : undefined;
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
