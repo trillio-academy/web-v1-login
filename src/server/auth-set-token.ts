@@ -20,7 +20,10 @@ function getAllowedOrigins(): string[] {
     'http://localhost:8081',
     'http://localhost:8082',
     'https://api.trillio.app',
+    'https://api-x.trillio.app',
     'https://api-teste.trillio.app',
+    'https://play.trillio.app',
+    'https://business.trillio.app',
     'https://trillio.app',
     'https://www.trillio.app',
   ].filter((url): url is string => Boolean(url));
@@ -51,6 +54,18 @@ function sanitizeRedirectUrl(redirectUrl: string | null, request: NextRequest): 
   if (!redirectUrl) return null;
   let target = redirectUrl.trim();
   if (!target) return null;
+
+  if (/^https?:\/[^/]/i.test(target)) {
+    target = target.startsWith('https:/') ? `https://${target.slice(7)}` : `http://${target.slice(6)}`;
+  }
+
+  if (target.startsWith('/https:/') || target.startsWith('/http:/')) {
+    return null;
+  }
+
+  if (/\/(login|logout|sso)(\/|$)/i.test(target)) {
+    return null;
+  }
 
   if (target.startsWith('http://') || target.startsWith('https://')) {
     try {
@@ -105,7 +120,9 @@ export async function handleAuthSetTokenPost(request: NextRequest) {
     return NextResponse.json({ error: 'Token inválido' }, { status: 400, headers });
   }
 
-  redirectUrl = sanitizeRedirectUrl(redirectUrl, request) || '';
+  const tenantFromPath = request.nextUrl.pathname.match(/^\/([^/]+)\/auth\/set-token/)?.[1];
+  const fallbackRedirect = tenantFromPath ? `/${tenantFromPath}/home` : '/';
+  redirectUrl = sanitizeRedirectUrl(redirectUrl, request) || fallbackRedirect;
 
   const domain =
     process.env.NEXT_PUBLIC_COOKIE_DOMAIN &&
