@@ -174,10 +174,12 @@ export async function handleAuthSetTokenPost(request: NextRequest) {
   }
 
   if (redirectUrl) {
-    const contentType = request.headers.get('content-type') || '';
-    const isFormPost = contentType.includes('application/x-www-form-urlencoded') || contentType.includes('multipart/form-data');
+    const useHtmlHandoff =
+      request.method === 'POST' ||
+      (request.headers.get('content-type') || '').includes('application/x-www-form-urlencoded') ||
+      (request.headers.get('content-type') || '').includes('multipart/form-data');
 
-    if (isFormPost) {
+    if (useHtmlHandoff) {
       const tokenJson = JSON.stringify(token);
       const refreshJson = refreshToken ? JSON.stringify(refreshToken) : 'null';
       const redirectJson = JSON.stringify(redirectUrl);
