@@ -17,7 +17,42 @@ const PUBLIC_PATH_PATTERNS = ['/login', '/site/cliente/show', '/recover', '/clie
 let tokenWaitDone = false;
 
 function isPublicRequestUrl(url: string): boolean {
-  return PUBLIC_PATH_PATTERNS.some((p) => url.includes(p));
+  return PUBLIC_PATH_PATTERNS.some((p) => {
+    const idx = url.indexOf(p);
+    if (idx === -1) return false;
+    const next = url[idx + p.length];
+    return next === undefined || next === '?' || next === '&' || next === '/';
+  });
+}
+
+/** Só deslogar em 401 quando a resposta indica falha de autenticação (não 404/rota inexistente). */
+function shouldLogoutOn401(error: { response?: { status?: number; data?: unknown } }): boolean {
+  if (error.response?.status !== 401) return false;
+  const data = error.response.data;
+  let msg = '';
+  if (typeof data === 'string') {
+    msg = data;
+  } else if (data && typeof data === 'object') {
+    const o = data as Record<string, unknown>;
+    msg = String(o.message ?? o.error ?? o.msg ?? '');
+  }
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes('token') ||
+    lower.includes('autenticação') ||
+    lower.includes('authentication') ||
+    lower.includes('expirado') ||
+    lower.includes('não fornecido') ||
+    lower.includes('nao fornecido') ||
+    lower.includes('unauthorized') ||
+    lower.includes('usuário não autenticado') ||
+    lower.includes('usuario nao autenticado')
+  ) {
+    return true;
+  }
+  // 401 sem corpo (gateway/proxy): tratar como sessão inválida
+  if (!msg) return true;
+  return false;
 }
 
 function isAuthDebug(): boolean {
@@ -183,6 +218,12 @@ class ApiClient {
         if (token) {
           const cleanToken = token.startsWith('Bearer ') ? token.slice(7) : token;
           config.headers.Authorization = `Bearer ${cleanToken}`;
+          try {
+            const { auth } = await import('./auth');
+            auth.syncSessionCookie();
+          } catch {
+            // ignore
+          }
           if (debug) {
             const url = (config.baseURL ?? '') + (config.url ?? '');
             console.log(LOG_PREFIX, 'request: Authorization header set', { url: url.slice(-60), tokenLen: cleanToken.length });
@@ -222,22 +263,23 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
-        if (error.response?.status === 401) {
+        if (shouldLogoutOn401(error)) {
           const requestUrl = (error.config?.baseURL ?? '') + (error.config?.url ?? '');
           if (isAuthDebug()) {
-            console.warn(LOG_PREFIX, '401 recebido (token inválido ou expirado)', { url: requestUrl.slice(-80) });
+            console.warn(LOG_PREFIX, '401 de autenticação — encerrando sessão', { url: requestUrl.slice(-80) });
           }
-          // Em qualquer 401 (token inválido/expirado), fazer logout e redirecionar para login
           if (typeof window !== 'undefined') {
             const isLoginPage = window.location.pathname.includes('/login');
             const pathParts = window.location.pathname.split('/').filter(Boolean);
             const urlCliente = pathParts[0] || (document.referrer ? new URL(document.referrer).pathname.split('/').filter(Boolean)[0] : null);
             if (!isLoginPage && !isPublicRequestUrl(requestUrl)) {
               const { auth } = await import('./auth');
-              auth.logout(urlCliente ?? undefined);
-              window.location.href = urlCliente ? `/${urlCliente}/login` : '/login';
+              auth.logout(urlCliente ?? undefined, { preserveReturnUrl: true });
             }
           }
+        } else if (error.response?.status === 401 && isAuthDebug()) {
+          const requestUrl = (error.config?.baseURL ?? '') + (error.config?.url ?? '');
+          console.warn(LOG_PREFIX, '401 ignorado (não é falha de sessão)', { url: requestUrl.slice(-80), data: error.response?.data });
         }
         return Promise.reject(error);
       }

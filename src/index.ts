@@ -1,5 +1,6 @@
-export { auth } from './lib/auth';
+export { auth, syncSessionCookie } from './lib/auth';
 export { apiClient } from './lib/api-client';
+export { buildLoginUrl, getSafeRedirectUrl, resolvePostLoginRedirect } from './lib/redirect';
 export type { User, LoginCredentials } from './types';
 export { default as LoginPage } from './components/LoginPage';
 export type { LoginApp } from './components/LoginPage';

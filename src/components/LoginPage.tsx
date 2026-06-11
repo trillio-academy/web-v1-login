@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { auth, LS_TOKEN_KEY, LS_TOKEN_EXPIRES_KEY } from '../lib/auth';
 import { apiClient, getApiUrlFromEnv } from '../lib/api-client';
+import { resolvePostLoginRedirect } from '../lib/redirect';
 import { useDocumentLocale } from '../lib/use-document-locale';
 import Loading from './Loading';
 
@@ -14,7 +15,7 @@ interface LoginPageProps {
   app: LoginApp;
 }
 
-function getRedirectAfterLogin(app: LoginApp, url: string, roles: string[]): string {
+function getDefaultRedirectAfterLogin(app: LoginApp, url: string, roles: string[]): string {
   if (app === 'play') {
     return `/${url}/home`;
   }
@@ -25,13 +26,12 @@ function getRedirectAfterLogin(app: LoginApp, url: string, roles: string[]): str
   return `/${url}/admin/dashboard`;
 }
 
+function getRedirectAfterLogin(app: LoginApp, url: string, roles: string[]): string {
+  return resolvePostLoginRedirect(getDefaultRedirectAfterLogin(app, url, roles));
+}
+
 function getRedirectWhenAlreadyAuth(app: LoginApp, url: string, roles: string[]): string {
-  if (app === 'play') return `/${url}/home`;
-  const isAdminUser = roles.includes('ROLE_ADMIN_CLIENTE') || roles.includes('ROLE_ADMIN');
-  const isHoldingUser = roles.includes('ROLE_HOLDING');
-  if (isAdminUser) return `/${url}/admin/dashboard`;
-  if (isHoldingUser) return `/${url}/holding/dashboard`;
-  return `/${url}/home`;
+  return resolvePostLoginRedirect(getDefaultRedirectAfterLogin(app, url, roles));
 }
 
 function getFriendlyLoginErrorKey(err: unknown): string {

@@ -5,6 +5,7 @@
  */
 import Cookies from 'js-cookie';
 import type { LoginCredentials, User } from '../types';
+import { buildLoginUrl } from './redirect';
 
 const TOKEN_KEY = 'Authorization';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -208,7 +209,10 @@ export const auth = {
     return { token, refreshToken };
   },
 
-  logout(url?: string): void {
+  logout(
+    url?: string,
+    options?: { preserveReturnUrl?: boolean; skipRedirect?: boolean }
+  ): void {
     if (isAuthDebug()) console.log(LOG_PREFIX, 'logout: limpando sessão');
     removeCookieSecure(TOKEN_KEY);
     removeCookieSecure(REFRESH_TOKEN_KEY);
@@ -222,23 +226,27 @@ export const auth = {
     } catch (e) {
       // ignore
     }
-    if (typeof window !== 'undefined') {
-      let finalUrl = url;
-      if (!finalUrl) {
-        const pathParts = window.location.pathname.split('/').filter(Boolean);
-        finalUrl = pathParts[0] || undefined;
-        if (!finalUrl && document.referrer) {
-          try {
-            const referrerUrl = new URL(document.referrer);
-            finalUrl = referrerUrl.pathname.split('/').filter(Boolean)[0] || undefined;
-          } catch (e) {
-            // ignore
-          }
+    if (options?.skipRedirect || typeof window === 'undefined') {
+      return;
+    }
+    let finalUrl = url;
+    if (!finalUrl) {
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      finalUrl = pathParts[0] || undefined;
+      if (!finalUrl && document.referrer) {
+        try {
+          const referrerUrl = new URL(document.referrer);
+          finalUrl = referrerUrl.pathname.split('/').filter(Boolean)[0] || undefined;
+        } catch (e) {
+          // ignore
         }
       }
-      const redirectUrl = finalUrl ? `/${finalUrl}/login` : '/login';
-      window.location.href = redirectUrl;
     }
+    if (options?.preserveReturnUrl && finalUrl) {
+      window.location.href = buildLoginUrl(finalUrl);
+      return;
+    }
+    window.location.href = finalUrl ? `/${finalUrl}/login` : '/login';
   },
 
   /** Mesma fonte que o api-client: localStorage primeiro, depois cookie. Evita hadAuth: false quando o token está só no localStorage. */
@@ -276,6 +284,17 @@ export const auth = {
 
   isAuthenticated(): boolean {
     return !!this.getToken();
+  },
+
+  /** Garante cookie Authorization para o middleware Next.js (usa localStorage como fonte). */
+  syncSessionCookie(): void {
+    if (typeof document === 'undefined') return;
+    const token = this.getToken();
+    if (!token) return;
+    const clean = token.startsWith('Bearer ') ? token.slice(7) : token;
+    if (!getCookieSecure(TOKEN_KEY)) {
+      setCookieSecure(TOKEN_KEY, clean, 3);
+    }
   },
 
   getClienteId(): number | null {
@@ -373,3 +392,8 @@ export const auth = {
     }
   },
 };
+
+/** Garante cookie Authorization para middleware Next.js (export nomeado para tipagem explícita). */
+export function syncSessionCookie(): void {
+  auth.syncSessionCookie();
+}
