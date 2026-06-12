@@ -12,6 +12,7 @@ import {
   buildLoginPrimaryButtonStyle,
   normalizeHexColor,
   pickTextColorBasedOnBgColor,
+  resolveLoginBrandColors,
   resolveLoginButtonColors,
 } from '../lib/color';
 
@@ -243,6 +244,15 @@ export default function LoginPage({
     (cliente?.CorSecundaria || cliente?.corSecundaria) as string | undefined,
     '#333333'
   );
+  const corTerciaria = normalizeHexColor(
+    (cliente?.CorTerciaria || cliente?.corTerciaria) as string | undefined,
+    ''
+  );
+  const corBackgroundHome = normalizeHexColor(
+    (cliente?.CorBackgroundHome || cliente?.corBackgroundHome) as string | undefined,
+    ''
+  );
+  const brandAccents = [corTerciaria, corBackgroundHome].filter((c) => c.length === 7);
   const corBackgroundLogin = normalizeHexColor(
     (cliente?.corBackgroundInformacoesDeLogin ||
       cliente?.corBackgroundLogin) as string | undefined,
@@ -266,11 +276,12 @@ export default function LoginPage({
 
   const prim = corPrimaria === '#000000' ? '#333333' : corPrimaria;
   const sec = corSecundaria === '#000000' ? '#333333' : corSecundaria;
+  const brand = resolveLoginBrandColors(prim, sec, brandAccents);
   const formPanelBg = '#ffffff';
-  const formButtonColors = resolveLoginButtonColors(prim, sec, formPanelBg);
+  const formButtonColors = resolveLoginButtonColors(prim, sec, formPanelBg, brandAccents);
   const loginAccent = formButtonColors.bg;
   const gradientStyle = {
-    background: `linear-gradient(to right, ${prim} 0%, ${sec} 100%)`,
+    background: `linear-gradient(to right, ${brand.prim} 0%, ${brand.sec} 100%)`,
     ['--login-primary' as string]: loginAccent,
   } as React.CSSProperties;
   const cardRightStyle = {
@@ -279,8 +290,8 @@ export default function LoginPage({
     backgroundSize: imagemBackgroundLogin ? 'cover' : undefined,
     backgroundPosition: imagemBackgroundLogin ? 'center' : undefined,
   };
-  const brandingButtonStyle = buildLoginPrimaryButtonStyle(prim, sec, corBackgroundLogin);
-  const primaryButtonStyle = buildLoginPrimaryButtonStyle(prim, sec, formPanelBg);
+  const brandingButtonStyle = buildLoginPrimaryButtonStyle(prim, sec, corBackgroundLogin, brandAccents);
+  const primaryButtonStyle = buildLoginPrimaryButtonStyle(prim, sec, formPanelBg, brandAccents);
   const corFonteTelaLogin =
     normalizeHexColor(cliente?.corFonteTelaLogin as string | undefined, '') ||
     pickTextColorBasedOnBgColor(corBackgroundLogin, '#f5f5f5', '#171717');

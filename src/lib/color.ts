@@ -52,25 +52,44 @@ export function relativeLuminance(hex: string): number {
   return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
 }
 
-/** Cor escura o suficiente para botão sobre fundo claro (ex.: painel branco do login). */
+function isVisibleOnSurface(color: string, surfaceBg: string, minContrast = 0.28): boolean {
+  return Math.abs(relativeLuminance(color) - relativeLuminance(surfaceBg)) >= minContrast;
+}
+
+/** Cores de marca visíveis para gradiente/fundo (quando primária/secundária são brancas). */
+export function resolveLoginBrandColors(
+  prim: string,
+  sec: string,
+  accents: string[] = []
+): { prim: string; sec: string } {
+  const fallback = '#333333';
+  const distinct = [...new Set([prim, sec, ...accents, fallback])];
+  const vivid = distinct.filter((c) => relativeLuminance(c) < 0.85);
+
+  if (vivid.length >= 2) return { prim: vivid[0], sec: vivid[1] };
+  if (vivid.length === 1) return { prim: vivid[0], sec: vivid[0] };
+  return { prim: fallback, sec: fallback };
+}
+
+/** Cor com contraste suficiente sobre o fundo do painel (ex.: botão SSO no painel branco). */
 export function resolveLoginButtonColors(
   prim: string,
   sec: string,
-  surfaceBg = '#ffffff'
+  surfaceBg = '#ffffff',
+  accents: string[] = []
 ): { bg: string; bgEnd: string; color: string } {
-  const surfaceL = relativeLuminance(surfaceBg);
-  const minContrast = 0.28;
   const fallback = '#333333';
+  const candidates = [...new Set([prim, sec, ...accents, fallback])];
 
-  const pickBg = (candidates: string[]) => {
-    for (const c of candidates) {
-      if (Math.abs(relativeLuminance(c) - surfaceL) >= minContrast) return c;
+  const pickBg = (pool: string[]) => {
+    for (const c of pool) {
+      if (isVisibleOnSurface(c, surfaceBg)) return c;
     }
     return fallback;
   };
 
-  const bg = pickBg([prim, sec, fallback]);
-  const bgEnd = pickBg([sec, prim, bg, fallback]);
+  const bg = pickBg(candidates);
+  const bgEnd = pickBg([sec, prim, ...accents, bg, fallback]);
 
   return {
     bg,
@@ -82,9 +101,10 @@ export function resolveLoginButtonColors(
 export function buildLoginPrimaryButtonStyle(
   prim: string,
   sec: string,
-  surfaceBg = '#ffffff'
+  surfaceBg = '#ffffff',
+  accents: string[] = []
 ): CSSProperties {
-  const { bg, bgEnd, color } = resolveLoginButtonColors(prim, sec, surfaceBg);
+  const { bg, bgEnd, color } = resolveLoginButtonColors(prim, sec, surfaceBg, accents);
   return {
     backgroundColor: bg,
     backgroundImage: `linear-gradient(to right, ${bg} 0%, ${bgEnd} 100%)`,
