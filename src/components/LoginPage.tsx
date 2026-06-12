@@ -8,6 +8,7 @@ import { getSafeRedirectUrl, resolvePostLoginRedirect } from '../lib/redirect';
 import { resolvePostLoginDestination, resolvePlayPostLoginPath } from '../lib/post-login';
 import { useDocumentLocale } from '../lib/use-document-locale';
 import Loading from './Loading';
+import { normalizeHexColor, pickTextColorBasedOnBgColor } from '../lib/color';
 
 export type LoginApp = 'play' | 'business';
 
@@ -229,9 +230,19 @@ export default function LoginPage({
     }
   };
 
-  const corPrimaria = (cliente?.CorPrimaria || cliente?.corPrimaria || '#333333') as string;
-  const corSecundaria = (cliente?.CorSecundaria || cliente?.corSecundaria || '#333333') as string;
-  const corBackgroundLogin = (cliente?.corBackgroundInformacoesDeLogin || '#d4d3d3') as string;
+  const corPrimaria = normalizeHexColor(
+    (cliente?.CorPrimaria || cliente?.corPrimaria) as string | undefined,
+    '#333333'
+  );
+  const corSecundaria = normalizeHexColor(
+    (cliente?.CorSecundaria || cliente?.corSecundaria) as string | undefined,
+    '#333333'
+  );
+  const corBackgroundLogin = normalizeHexColor(
+    (cliente?.corBackgroundInformacoesDeLogin ||
+      cliente?.corBackgroundLogin) as string | undefined,
+    '#d4d3d3'
+  );
   const imagemBackgroundLogin = (cliente?.imagemBackgroundLogin as { webPath?: string; caminho?: string } | undefined)
     ?.webPath || (cliente?.imagemBackgroundLogin as { webPath?: string; caminho?: string } | undefined)?.caminho || null;
   const apiBaseUrl = (typeof window !== 'undefined' ? getApiUrlFromEnv() : '') || '';
@@ -248,9 +259,12 @@ export default function LoginPage({
       ? `${apiBaseUrl.replace(/\/$/, '')}${rawLogoUrl.startsWith('/') ? '' : '/'}${rawLogoUrl}`
       : rawLogoUrl;
 
+  const prim = corPrimaria === '#000000' ? '#333333' : corPrimaria;
+  const sec = corSecundaria === '#000000' ? '#333333' : corSecundaria;
   const gradientStyle = {
-    background: `linear-gradient(to right, ${corPrimaria === '#000000' ? '#333' : corPrimaria} 0%, ${corSecundaria === '#000000' ? '#333' : corSecundaria} 100%)`,
-  };
+    background: `linear-gradient(to right, ${prim} 0%, ${sec} 100%)`,
+    ['--login-primary' as string]: prim,
+  } as React.CSSProperties;
   const cardRightStyle = {
     backgroundColor: corBackgroundLogin,
     backgroundImage: imagemBackgroundLogin ? `url("${imagemBackgroundLogin}")` : undefined,
@@ -258,10 +272,15 @@ export default function LoginPage({
     backgroundPosition: imagemBackgroundLogin ? 'center' : undefined,
   };
   const primaryButtonStyle = {
-    backgroundColor: corPrimaria === '#000000' ? '#333' : corPrimaria,
-    backgroundImage: `linear-gradient(to right, ${corPrimaria === '#000000' ? '#333' : corPrimaria} 0%, ${corSecundaria === '#000000' ? '#333' : corSecundaria} 100%)`,
+    backgroundColor: prim,
+    backgroundImage: `linear-gradient(to right, ${prim} 0%, ${sec} 100%)`,
+    color: pickTextColorBasedOnBgColor(prim, '#ffffff', '#171717'),
   };
-  const corFonteTelaLogin = (cliente?.corFonteTelaLogin as string) || '#333333';
+  const corFonteTelaLogin =
+    normalizeHexColor(cliente?.corFonteTelaLogin as string | undefined, '') ||
+    pickTextColorBasedOnBgColor(corBackgroundLogin, '#f5f5f5', '#171717');
+  const inputFocusClass =
+    'focus:outline-none focus:ring-2 focus:ring-[var(--login-primary)] focus:border-[var(--login-primary)]';
 
   const renderBrandingPanel = (options?: { showContinueButton?: boolean }) => (
     <>
@@ -304,7 +323,7 @@ export default function LoginPage({
           <button
             type="button"
             onClick={handleContinueToLogin}
-            className="w-full py-3.5 px-4 border border-transparent text-base font-semibold rounded-md text-white shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+            className="w-full py-3.5 px-4 border border-transparent text-base font-semibold rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--login-primary)] transition-all duration-200"
             style={primaryButtonStyle}
           >
             {isLoginExclusivamentePorSSO ? t('login.ssoButton') : t('login.continue')}
@@ -366,7 +385,10 @@ export default function LoginPage({
           >
             {renderBrandingPanel()}
           </div>
-          <div className="w-full md:w-3/5 flex flex-col justify-center px-4 py-6 sm:px-8 md:px-12 md:py-12 bg-white rounded-lg md:rounded-none md:rounded-r-lg min-h-[calc(100dvh-2rem)] md:min-h-0">
+          <div
+            className="w-full md:w-3/5 flex flex-col justify-center px-4 py-6 sm:px-8 md:px-12 md:py-12 bg-white rounded-lg md:rounded-none md:rounded-r-lg min-h-[calc(100dvh-2rem)] md:min-h-0"
+            style={{ ['--login-primary' as string]: prim }}
+          >
             <button
               type="button"
               className="md:hidden mb-4 inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
@@ -389,7 +411,7 @@ export default function LoginPage({
               <div className="space-y-6">
                 <a
                   href={buildSsoHref()}
-                  className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent text-sm font-semibold rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                  className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent text-sm font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--login-primary)] transition-all duration-200"
                   style={primaryButtonStyle}
                 >
                   {t('login.ssoButton')}
@@ -401,12 +423,12 @@ export default function LoginPage({
               <div className="space-y-4">
                 <div>
                   <label htmlFor="login" className="block text-sm font-medium text-gray-700 mb-1">{t('login.loginLabel')}</label>
-                  <input id="login" name="login" type="text" required className="w-full px-4 py-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900" placeholder={t('login.loginPlaceholder')} value={login} onChange={(e) => setLogin(e.target.value)} />
+                  <input id="login" name="login" type="text" required className={`w-full px-4 py-3 text-base border border-gray-300 rounded-md text-gray-900 ${inputFocusClass}`} placeholder={t('login.loginPlaceholder')} value={login} onChange={(e) => setLogin(e.target.value)} />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label htmlFor="senha" className="block text-sm font-medium text-gray-700">{t('login.password')}</label>
-                    <a href="#" onClick={(e) => { e.preventDefault(); handleRecoverPassword(); }} className="text-sm text-blue-600 hover:text-blue-800 hover:underline">{t('login.forgotPassword')}</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleRecoverPassword(); }} className="text-sm hover:underline" style={{ color: prim }}>{t('login.forgotPassword')}</a>
                   </div>
                   <div className="relative">
                     <input
@@ -414,7 +436,7 @@ export default function LoginPage({
                       name="senha"
                       type={showPassword ? 'text' : 'password'}
                       required
-                      className="w-full px-4 py-3 pr-12 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                      className={`w-full px-4 py-3 pr-12 text-base border border-gray-300 rounded-md text-gray-900 ${inputFocusClass}`}
                       placeholder={t('login.passwordPlaceholder')}
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
@@ -446,7 +468,7 @@ export default function LoginPage({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                  className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--login-primary)] disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                   style={{
                     ...primaryButtonStyle,
                     backgroundImage: loading ? undefined : primaryButtonStyle.backgroundImage,
@@ -467,10 +489,10 @@ export default function LoginPage({
                 <div>
                   <a
                     href={buildSsoHref()}
-                    className="w-full flex justify-center items-center py-3 px-4 border-2 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="w-full flex justify-center items-center py-3 px-4 border-2 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--login-primary)]"
                     style={{
-                      borderColor: corPrimaria === '#000000' ? '#333' : corPrimaria,
-                      color: corPrimaria === '#000000' ? '#333' : corPrimaria,
+                      borderColor: prim,
+                      color: prim,
                     }}
                   >
                     {t('login.ssoButton')}
@@ -478,7 +500,7 @@ export default function LoginPage({
                 </div>
               ) : null}
               <div className="mt-4 text-center">
-                <a href={`/${url}/autocadastro`} className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                <a href={`/${url}/autocadastro`} className="text-sm hover:underline" style={{ color: prim }}>
                   {t('login.noAccount')}
                 </a>
               </div>
@@ -497,19 +519,23 @@ export default function LoginPage({
       </div>
       {showRecoverModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowRecoverModal(false)}>
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
+            style={{ ['--login-primary' as string]: prim }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('login.recoverTitle')}</h2>
             <form onSubmit={handleRecoverSubmit}>
               <div className="mb-4">
                 <label htmlFor="recover-email" className="block text-sm font-medium text-gray-700 mb-1">{t('login.email')}</label>
-                <input id="recover-email" type="email" value={recoverEmail} onChange={(e) => setRecoverEmail(e.target.value)} required className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900" placeholder={t('login.emailPlaceholder')} />
+                <input id="recover-email" type="email" value={recoverEmail} onChange={(e) => setRecoverEmail(e.target.value)} required className={`w-full px-4 py-3 border border-gray-300 rounded-md text-gray-900 ${inputFocusClass}`} placeholder={t('login.emailPlaceholder')} />
               </div>
               {recoverMessage && (
                 <div className={`mb-4 p-3 rounded-md text-sm ${recoverMessage.includes('sucesso') || recoverMessage.includes('success') || recoverMessage.includes('éxito') ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>{recoverMessage}</div>
               )}
               <div className="flex gap-2">
                 <button type="button" onClick={() => setShowRecoverModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">{t('login.cancel')}</button>
-                <button type="submit" disabled={recoverLoading} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{recoverLoading ? t('login.sending') : t('login.send')}</button>
+                <button type="submit" disabled={recoverLoading} className="flex-1 px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:opacity-90" style={primaryButtonStyle}>{recoverLoading ? t('login.sending') : t('login.send')}</button>
               </div>
             </form>
           </div>
