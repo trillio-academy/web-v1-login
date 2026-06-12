@@ -16,6 +16,12 @@ const PUBLIC_PATH_PATTERNS = ['/login', '/site/cliente/show', '/recover', '/clie
 /** Uma vez por carregamento: ao não ter token em rota protegida, espera um pouco (evita race pós-redirect). */
 let tokenWaitDone = false;
 
+if (typeof window !== 'undefined') {
+  window.addEventListener('pageshow', () => {
+    tokenWaitDone = false;
+  });
+}
+
 function isPublicRequestUrl(url: string): boolean {
   return PUBLIC_PATH_PATTERNS.some((p) => {
     const idx = url.indexOf(p);
@@ -210,7 +216,7 @@ class ApiClient {
         const url = (config.baseURL ?? '') + (config.url ?? '');
         if (!token && !isPublicRequestUrl(url) && !tokenWaitDone) {
           tokenWaitDone = true;
-          await new Promise((r) => setTimeout(r, 220));
+          await new Promise((r) => setTimeout(r, 450));
           token = getTokenSecure();
         }
         const refreshToken = getRefreshTokenSecure();

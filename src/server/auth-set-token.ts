@@ -159,8 +159,9 @@ export async function handleAuthSetTokenPost(request: NextRequest) {
       : undefined;
 
   const cookieStore = await cookies();
+  // httpOnly: false — apiClient lê via js-cookie/document.cookie (httpOnly não é visível ao JS).
   const cookieOptions = {
-    httpOnly: true,
+    httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax' as const,
     maxAge: 60 * 60 * 3,
@@ -195,6 +196,14 @@ export async function handleAuthSetTokenPost(request: NextRequest) {
   var tokenExpKey = '__trillio_token__Authorization_expires';
   var refreshKey = '__trillio_token__refreshToken';
   var refreshExpKey = '__trillio_token__refreshToken_expires';
+  function writeCookie(name, value, days) {
+    var exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+    var parts = [name + '=' + encodeURIComponent(value), 'expires=' + exp, 'path=/', 'SameSite=Lax'];
+    var dom = ${JSON.stringify(domain || '')};
+    if (dom) parts.push('domain=' + dom);
+    if (location.protocol === 'https:') parts.push('Secure');
+    document.cookie = parts.join('; ');
+  }
   try {
     localStorage.setItem(tokenKey, token);
     localStorage.setItem(tokenExpKey, String(Date.now() + 3 * 24 * 60 * 60 * 1000));
@@ -203,6 +212,8 @@ export async function handleAuthSetTokenPost(request: NextRequest) {
       localStorage.setItem(refreshExpKey, String(Date.now() + 6 * 24 * 60 * 60 * 1000));
     }
   } catch (e) {}
+  writeCookie('Authorization', token, 3);
+  if (refresh) writeCookie('refreshToken', refresh, 6);
   window.location.replace(redirect);
 })();
 </script></body></html>`;
