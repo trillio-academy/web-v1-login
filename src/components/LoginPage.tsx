@@ -119,19 +119,12 @@ export default function LoginPage({
         setCheckingAuth(false);
         return;
       }
-      // Se o token existe e não está expirado, redireciona direto para a home (sessão ativa em outra aba)
-      if (!auth.isTokenExpired(token)) {
-        const user = auth.decodeToken(token);
-        const roles = user?.roles || [];
-        const defaultPath = getDefaultRedirectAfterLogin(app, url, roles);
-        const redirect =
-          app === 'play'
-            ? await resolvePlayPostLoginPath(url, defaultPath)
-            : getRedirectWhenAlreadyAuth(app, url, roles);
-        window.location.replace(redirect);
+      if (auth.isTokenExpired(token)) {
+        auth.logout(url, { skipRedirect: true });
+        setCheckingAuth(false);
         return;
       }
-      // Token expirado ou inválido: validar na API (pode retornar 401 e limpar sessão)
+      // Sessão ativa em outra aba: validar na API antes de redirecionar (evita 401 na home → logout)
       try {
         await apiClient.get(`/app/cliente/${url}/site/home?getClientePublicData=true`);
         const user = auth.decodeToken(token);
@@ -144,7 +137,7 @@ export default function LoginPage({
         window.location.replace(redirect);
       } catch (err: unknown) {
         const status = err && typeof err === 'object' && 'response' in err ? (err as { response?: { status?: number } }).response?.status : undefined;
-        if (status === 401) auth.logout(url);
+        if (status === 401) auth.logout(url, { skipRedirect: true });
         setCheckingAuth(false);
       }
     };
