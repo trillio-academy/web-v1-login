@@ -223,6 +223,11 @@ export const auth = {
       localStorage.removeItem(LS_REFRESH_EXPIRES_KEY);
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+      // Chaves gravadas pelo handoff HTML do SSO (auth/set-token)
+      localStorage.removeItem('__trillio_token__Authorization');
+      localStorage.removeItem('__trillio_token__Authorization_expires');
+      localStorage.removeItem('__trillio_token__refreshToken');
+      localStorage.removeItem('__trillio_token__refreshToken_expires');
     } catch (e) {
       // ignore
     }
