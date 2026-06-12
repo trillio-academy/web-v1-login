@@ -56,6 +56,15 @@ function isVisibleOnSurface(color: string, surfaceBg: string, minContrast = 0.28
   return Math.abs(relativeLuminance(color) - relativeLuminance(surfaceBg)) >= minContrast;
 }
 
+function uniqueStrings(values: string[]): string[] {
+  const result: string[] = [];
+  for (let i = 0; i < values.length; i += 1) {
+    const value = values[i];
+    if (result.indexOf(value) === -1) result.push(value);
+  }
+  return result;
+}
+
 /** Cores de marca visíveis para gradiente/fundo (quando primária/secundária são brancas). */
 export function resolveLoginBrandColors(
   prim: string,
@@ -63,7 +72,7 @@ export function resolveLoginBrandColors(
   accents: string[] = []
 ): { prim: string; sec: string } {
   const fallback = '#333333';
-  const distinct = [...new Set([prim, sec, ...accents, fallback])];
+  const distinct = uniqueStrings([prim, sec].concat(accents).concat([fallback]));
   const vivid = distinct.filter((c) => relativeLuminance(c) < 0.85);
 
   if (vivid.length >= 2) return { prim: vivid[0], sec: vivid[1] };
@@ -79,17 +88,18 @@ export function resolveLoginButtonColors(
   accents: string[] = []
 ): { bg: string; bgEnd: string; color: string } {
   const fallback = '#333333';
-  const candidates = [...new Set([prim, sec, ...accents, fallback])];
+  const candidates = uniqueStrings([prim, sec].concat(accents).concat([fallback]));
 
   const pickBg = (pool: string[]) => {
-    for (const c of pool) {
+    for (let i = 0; i < pool.length; i += 1) {
+      const c = pool[i];
       if (isVisibleOnSurface(c, surfaceBg)) return c;
     }
     return fallback;
   };
 
   const bg = pickBg(candidates);
-  const bgEnd = pickBg([sec, prim, ...accents, bg, fallback]);
+  const bgEnd = pickBg(uniqueStrings([sec, prim].concat(accents).concat([bg, fallback])));
 
   return {
     bg,
