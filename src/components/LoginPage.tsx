@@ -8,7 +8,12 @@ import { getSafeRedirectUrl, resolvePostLoginRedirect } from '../lib/redirect';
 import { resolvePostLoginDestination, resolvePlayPostLoginPath } from '../lib/post-login';
 import { useDocumentLocale } from '../lib/use-document-locale';
 import Loading from './Loading';
-import { normalizeHexColor, pickTextColorBasedOnBgColor } from '../lib/color';
+import {
+  buildLoginPrimaryButtonStyle,
+  normalizeHexColor,
+  pickTextColorBasedOnBgColor,
+  resolveLoginButtonColors,
+} from '../lib/color';
 
 export type LoginApp = 'play' | 'business';
 
@@ -261,9 +266,12 @@ export default function LoginPage({
 
   const prim = corPrimaria === '#000000' ? '#333333' : corPrimaria;
   const sec = corSecundaria === '#000000' ? '#333333' : corSecundaria;
+  const formPanelBg = '#ffffff';
+  const formButtonColors = resolveLoginButtonColors(prim, sec, formPanelBg);
+  const loginAccent = formButtonColors.bg;
   const gradientStyle = {
     background: `linear-gradient(to right, ${prim} 0%, ${sec} 100%)`,
-    ['--login-primary' as string]: prim,
+    ['--login-primary' as string]: loginAccent,
   } as React.CSSProperties;
   const cardRightStyle = {
     backgroundColor: corBackgroundLogin,
@@ -271,11 +279,8 @@ export default function LoginPage({
     backgroundSize: imagemBackgroundLogin ? 'cover' : undefined,
     backgroundPosition: imagemBackgroundLogin ? 'center' : undefined,
   };
-  const primaryButtonStyle = {
-    backgroundColor: prim,
-    backgroundImage: `linear-gradient(to right, ${prim} 0%, ${sec} 100%)`,
-    color: pickTextColorBasedOnBgColor(prim, '#ffffff', '#171717'),
-  };
+  const brandingButtonStyle = buildLoginPrimaryButtonStyle(prim, sec, corBackgroundLogin);
+  const primaryButtonStyle = buildLoginPrimaryButtonStyle(prim, sec, formPanelBg);
   const corFonteTelaLogin =
     normalizeHexColor(cliente?.corFonteTelaLogin as string | undefined, '') ||
     pickTextColorBasedOnBgColor(corBackgroundLogin, '#f5f5f5', '#171717');
@@ -324,7 +329,7 @@ export default function LoginPage({
             type="button"
             onClick={handleContinueToLogin}
             className="w-full py-3.5 px-4 border border-transparent text-base font-semibold rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--login-primary)] transition-all duration-200"
-            style={primaryButtonStyle}
+            style={brandingButtonStyle}
           >
             {isLoginExclusivamentePorSSO ? t('login.ssoButton') : t('login.continue')}
           </button>
@@ -387,7 +392,7 @@ export default function LoginPage({
           </div>
           <div
             className="w-full md:w-3/5 flex flex-col justify-center px-4 py-6 sm:px-8 md:px-12 md:py-12 bg-white rounded-lg md:rounded-none md:rounded-r-lg min-h-[calc(100dvh-2rem)] md:min-h-0"
-            style={{ ['--login-primary' as string]: prim }}
+            style={{ ['--login-primary' as string]: loginAccent }}
           >
             <button
               type="button"
@@ -428,7 +433,7 @@ export default function LoginPage({
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label htmlFor="senha" className="block text-sm font-medium text-gray-700">{t('login.password')}</label>
-                    <a href="#" onClick={(e) => { e.preventDefault(); handleRecoverPassword(); }} className="text-sm hover:underline" style={{ color: prim }}>{t('login.forgotPassword')}</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleRecoverPassword(); }} className="text-sm hover:underline" style={{ color: loginAccent }}>{t('login.forgotPassword')}</a>
                   </div>
                   <div className="relative">
                     <input
@@ -491,8 +496,8 @@ export default function LoginPage({
                     href={buildSsoHref()}
                     className="w-full flex justify-center items-center py-3 px-4 border-2 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--login-primary)]"
                     style={{
-                      borderColor: prim,
-                      color: prim,
+                      borderColor: loginAccent,
+                      color: loginAccent,
                     }}
                   >
                     {t('login.ssoButton')}
@@ -500,7 +505,7 @@ export default function LoginPage({
                 </div>
               ) : null}
               <div className="mt-4 text-center">
-                <a href={`/${url}/autocadastro`} className="text-sm hover:underline" style={{ color: prim }}>
+                <a href={`/${url}/autocadastro`} className="text-sm hover:underline" style={{ color: loginAccent }}>
                   {t('login.noAccount')}
                 </a>
               </div>
@@ -521,7 +526,7 @@ export default function LoginPage({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowRecoverModal(false)}>
           <div
             className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
-            style={{ ['--login-primary' as string]: prim }}
+            style={{ ['--login-primary' as string]: loginAccent }}
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('login.recoverTitle')}</h2>
