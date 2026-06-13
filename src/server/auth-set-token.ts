@@ -10,22 +10,18 @@ function isValidJWTFormat(token: string | null | undefined): boolean {
 function getAllowedOrigins(): string[] {
   return [
     process.env.NEXT_PUBLIC_API_URL,
+    process.env.NEXT_PUBLIC_API_V1_URL,
     process.env.NEXT_PUBLIC_WEB_V1_URL,
     process.env.NEXT_PUBLIC_CLIENT_URL,
     process.env.NEXT_PUBLIC_TRILLIO_URL,
+    process.env.NEXT_PUBLIC_PLAY_APP_URL,
+    process.env.NEXT_PUBLIC_BUSINESS_APP_URL,
     process.env.APP_TRILLIO_PLAY_URL,
     process.env.APP_TRILLIO_BUSINESS_URL,
     'http://localhost:5000',
     'http://localhost:8080',
     'http://localhost:8081',
     'http://localhost:8082',
-    'https://api.trillio.app',
-    'https://api-x.trillio.app',
-    'https://api-teste.trillio.app',
-    'https://play.trillio.app',
-    'https://business.trillio.app',
-    'https://trillio.app',
-    'https://www.trillio.app',
   ].filter((url): url is string => Boolean(url));
 }
 

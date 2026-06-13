@@ -1,5 +1,5 @@
 export { auth, syncSessionCookie } from './lib/auth';
-export { apiClient } from './lib/api-client';
+export { apiClient, getApiUrlFromEnv, getClientBaseUrl } from './lib/api-client';
 export { buildLoginUrl, getSafeRedirectUrl, resolvePostLoginRedirect } from './lib/redirect';
 export { resolvePlayPostLoginPath, resolvePostLoginDestination } from './lib/post-login';
 export type { User, LoginCredentials } from './types';

@@ -173,20 +173,13 @@ export function getApiUrlFromEnv(): string {
   return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_V1_URL || 'http://localhost:5001';
 }
 
-/** URL padrão da API em produção quando env não está disponível (ex.: build/cache no Amplify). */
-const PRODUCTION_API_URL = 'https://api-x.trillio.app';
-
 /** Base URL para chamadas à API: usa proxy quando configurado (evita CORS em dev e em produção). */
 export function getClientBaseUrl(): string {
   // Se o app pediu uso do proxy, sempre usar same-origin /api/proxy (evita CORS; o servidor Next repassa ao backend).
   if (process.env.NEXT_PUBLIC_USE_API_PROXY === 'true') {
     return '/api/proxy';
   }
-  let apiUrl = getApiUrlFromEnv();
-  // Em host de produção (play/business .trillio.app), se env veio vazia, usar URL padrão
-  if (typeof window !== 'undefined' && window.location?.hostname?.includes('trillio.app') && (!apiUrl || apiUrl.includes('localhost'))) {
-    apiUrl = PRODUCTION_API_URL;
-  }
+  const apiUrl = getApiUrlFromEnv();
   if (apiUrl && apiUrl.trim() && !apiUrl.includes('localhost')) {
     return apiUrl.replace(/\/$/, '');
   }
