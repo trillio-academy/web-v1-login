@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { FRESH_LOGIN_COOKIE } from '../lib/fresh-login';
 
 function isValidJWTFormat(token: string | null | undefined): boolean {
   if (!token || typeof token !== 'string') return false;
@@ -169,6 +170,7 @@ export async function handleAuthSetTokenPost(request: NextRequest) {
   if (refreshToken) {
     cookieStore.set('refreshToken', refreshToken, { ...cookieOptions, maxAge: 60 * 60 * 6 });
   }
+  cookieStore.set(FRESH_LOGIN_COOKIE, '1', { ...cookieOptions, maxAge: 20 });
 
   if (redirectUrl) {
     const useHtmlHandoff =
@@ -207,9 +209,11 @@ export async function handleAuthSetTokenPost(request: NextRequest) {
       localStorage.setItem(refreshKey, refresh);
       localStorage.setItem(refreshExpKey, String(Date.now() + 6 * 24 * 60 * 60 * 1000));
     }
+    sessionStorage.setItem('trillio:justLoggedIn', '1');
   } catch (e) {}
   writeCookie('Authorization', token, 3);
   if (refresh) writeCookie('refreshToken', refresh, 6);
+  writeCookie(${JSON.stringify(FRESH_LOGIN_COOKIE)}, '1', 1 / 24 / 60 / 3);
   window.location.replace(redirect);
 })();
 </script></body></html>`;

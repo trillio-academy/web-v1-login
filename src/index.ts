@@ -1,6 +1,7 @@
 export { auth, syncSessionCookie } from './lib/auth';
 export { apiClient, getApiUrlFromEnv, getClientBaseUrl } from './lib/api-client';
 export { buildLoginUrl, getSafeRedirectUrl, resolvePostLoginRedirect } from './lib/redirect';
+export { FRESH_LOGIN_COOKIE, markFreshLogin, consumeFreshLoginMark } from './lib/fresh-login';
 export { resolvePlayPostLoginPath, resolvePostLoginDestination } from './lib/post-login';
 export type { User, LoginCredentials } from './types';
 export { default as LoginPage } from './components/LoginPage';

@@ -227,6 +227,9 @@ export default function LoginPage({
         localStorage.setItem(LS_TOKEN_EXPIRES_KEY, String(Date.now() + 3 * 24 * 60 * 60 * 1000));
         await new Promise((r) => setTimeout(r, 80));
       }
+      // auth.login já marca fresh login; reforço antes do redirect para o gate do Play no SSR.
+      const { markFreshLogin } = await import('../lib/fresh-login');
+      markFreshLogin();
       window.location.href = redirect;
     } catch (err: unknown) {
       const key = getFriendlyLoginErrorKey(err);

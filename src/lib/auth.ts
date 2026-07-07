@@ -5,6 +5,7 @@
  */
 import Cookies from 'js-cookie';
 import type { LoginCredentials, User } from '../types';
+import { markFreshLogin } from './fresh-login';
 import { buildLoginUrl } from './redirect';
 
 const TOKEN_KEY = 'Authorization';
@@ -205,6 +206,8 @@ export const auth = {
     setCookieSecure(TOKEN_KEY, token, 3);
     if (refreshToken) setCookieSecure(REFRESH_TOKEN_KEY, refreshToken, 6);
     if (debug) console.log(LOG_PREFIX, 'login: sucesso, cookie setado');
+
+    markFreshLogin();
 
     return { token, refreshToken };
   },
