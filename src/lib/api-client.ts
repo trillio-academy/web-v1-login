@@ -173,6 +173,32 @@ export function getApiUrlFromEnv(): string {
   return process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_V1_URL || 'http://localhost:5001';
 }
 
+/** URL pública da API (sem /api/proxy). Usar em operações longas — Amplify limita o proxy a ~30s. */
+export function getDirectApiBaseUrl(): string {
+  return getApiUrlFromEnv().replace(/\/$/, '');
+}
+
+const PRODUCTION_TRILLIO_API_FALLBACK = 'https://api-x.trillio.app';
+
+function isLocalOrMissingApiUrl(url: string): boolean {
+  const u = (url || '').trim();
+  if (!u || u === '/api/proxy') return true;
+  return /localhost|127\.0\.0\.1/i.test(u);
+}
+
+/** API direta para operações longas; em *.trillio.app usa fallback se o build não injetou NEXT_PUBLIC_API_URL. */
+export function getLongRunningApiBaseUrl(): string {
+  const direct = getDirectApiBaseUrl();
+  if (!isLocalOrMissingApiUrl(direct)) return direct;
+  if (typeof window !== 'undefined' && /\.trillio\.app$/i.test(window.location.hostname)) {
+    return PRODUCTION_TRILLIO_API_FALLBACK;
+  }
+  return direct;
+}
+
+/** Timeout máximo (15 min) para requisições síncronas longas (ex.: geração de imagem por IA). */
+export const LONG_REQUEST_TIMEOUT_MS = 900_000;
+
 /** Base URL para chamadas à API: usa proxy quando configurado (evita CORS em dev e em produção). */
 export function getClientBaseUrl(): string {
   // Se o app pediu uso do proxy, sempre usar same-origin /api/proxy (evita CORS; o servidor Next repassa ao backend).

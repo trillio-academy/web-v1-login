@@ -1,5 +1,12 @@
 export { auth, syncSessionCookie } from './lib/auth';
-export { apiClient, getApiUrlFromEnv, getClientBaseUrl } from './lib/api-client';
+export {
+  apiClient,
+  getApiUrlFromEnv,
+  getClientBaseUrl,
+  getDirectApiBaseUrl,
+  getLongRunningApiBaseUrl,
+  LONG_REQUEST_TIMEOUT_MS,
+} from './lib/api-client';
 export { buildLoginUrl, getSafeRedirectUrl, resolvePostLoginRedirect } from './lib/redirect';
 export { FRESH_LOGIN_COOKIE, markFreshLogin, consumeFreshLoginMark } from './lib/fresh-login';
 export { resolvePlayPostLoginPath, resolvePostLoginDestination } from './lib/post-login';
