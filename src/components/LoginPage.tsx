@@ -15,6 +15,7 @@ import {
   resolveLoginBrandColors,
   resolveLoginButtonColors,
 } from '../lib/color';
+import { buildLoginLogoCandidates, toAbsoluteUploadUrl } from '../lib/upload-url';
 
 export type LoginApp = 'play' | 'business';
 
@@ -81,7 +82,8 @@ export default function LoginPage({
   const [showRecoverModal, setShowRecoverModal] = useState(false);
   const [recoverLoading, setRecoverLoading] = useState(false);
   const [recoverMessage, setRecoverMessage] = useState('');
-  const [logoError, setLogoError] = useState(false);
+  const [logoCandidateIndex, setLogoCandidateIndex] = useState(0);
+  const [backgroundLoginUrl, setBackgroundLoginUrl] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showMobileLogin, setShowMobileLogin] = useState(startOnLoginForm);
 
@@ -90,8 +92,17 @@ export default function LoginPage({
   }, [url, startOnLoginForm]);
 
   useEffect(() => {
-    setLogoError(false);
+    setLogoCandidateIndex(0);
   }, [cliente?.logoGrandeTelaDeLogin, cliente?.logoTelaDeLogin, cliente?.logo]);
+
+  useEffect(() => {
+    const raw =
+      (cliente?.imagemBackgroundLogin as { webPath?: string; caminho?: string } | undefined)?.webPath ||
+      (cliente?.imagemBackgroundLogin as { webPath?: string; caminho?: string } | undefined)?.caminho ||
+      null;
+    const apiBase = (typeof window !== 'undefined' ? getApiUrlFromEnv() : '') || '';
+    setBackgroundLoginUrl(toAbsoluteUploadUrl(raw, apiBase));
+  }, [cliente?.imagemBackgroundLogin]);
 
   const buildSsoHref = () => {
     const redirect = typeof window !== 'undefined'
@@ -261,21 +272,12 @@ export default function LoginPage({
       cliente?.corBackgroundLogin) as string | undefined,
     '#d4d3d3'
   );
-  const imagemBackgroundLogin = (cliente?.imagemBackgroundLogin as { webPath?: string; caminho?: string } | undefined)
-    ?.webPath || (cliente?.imagemBackgroundLogin as { webPath?: string; caminho?: string } | undefined)?.caminho || null;
   const apiBaseUrl = (typeof window !== 'undefined' ? getApiUrlFromEnv() : '') || '';
-  const rawLogoUrl =
-    (cliente?.logoGrandeTelaDeLogin as { webPath?: string; caminho?: string } | undefined)?.webPath ||
-    (cliente?.logoGrandeTelaDeLogin as { webPath?: string; caminho?: string } | undefined)?.caminho ||
-    (cliente?.logoTelaDeLogin as { webPath?: string; caminho?: string } | undefined)?.webPath ||
-    (cliente?.logoTelaDeLogin as { webPath?: string; caminho?: string } | undefined)?.caminho ||
-    (cliente?.logo as { webPath?: string; caminho?: string } | undefined)?.webPath ||
-    (cliente?.logo as { webPath?: string; caminho?: string } | undefined)?.caminho ||
-    null;
-  const logoUrl =
-    rawLogoUrl && typeof rawLogoUrl === 'string' && !rawLogoUrl.startsWith('http')
-      ? `${apiBaseUrl.replace(/\/$/, '')}${rawLogoUrl.startsWith('/') ? '' : '/'}${rawLogoUrl}`
-      : rawLogoUrl;
+  const logoCandidates = buildLoginLogoCandidates(cliente, apiBaseUrl);
+  const logoUrl = logoCandidates[logoCandidateIndex] || null;
+  const handleLogoError = () => {
+    setLogoCandidateIndex((i) => (i + 1 < logoCandidates.length ? i + 1 : logoCandidates.length));
+  };
 
   const prim = corPrimaria === '#000000' ? '#333333' : corPrimaria;
   const sec = corSecundaria === '#000000' ? '#333333' : corSecundaria;
@@ -289,9 +291,9 @@ export default function LoginPage({
   } as React.CSSProperties;
   const cardRightStyle = {
     backgroundColor: corBackgroundLogin,
-    backgroundImage: imagemBackgroundLogin ? `url("${imagemBackgroundLogin}")` : undefined,
-    backgroundSize: imagemBackgroundLogin ? 'cover' : undefined,
-    backgroundPosition: imagemBackgroundLogin ? 'center' : undefined,
+    backgroundImage: backgroundLoginUrl ? `url("${backgroundLoginUrl}")` : undefined,
+    backgroundSize: backgroundLoginUrl ? 'cover' : undefined,
+    backgroundPosition: backgroundLoginUrl ? 'center' : undefined,
   };
   const brandingButtonStyle = buildLoginPrimaryButtonStyle(prim, sec, corBackgroundLogin, brandAccents);
   const primaryButtonStyle = buildLoginPrimaryButtonStyle(prim, sec, formPanelBg, brandAccents);
@@ -319,9 +321,9 @@ export default function LoginPage({
         </div>
       ) : null}
       <div className={`flex justify-center items-center ${options?.showContinueButton ? 'my-6' : 'mt-4 mb-4 md:mt-8 md:mb-8 min-h-[80px] md:min-h-[120px]'}`}>
-        {logoUrl && !logoError ? (
+        {logoUrl ? (
           <a href="https://trillio.com.br/" target="_blank" rel="noopener noreferrer" className="flex justify-center">
-            <img src={logoUrl} alt={(cliente?.nome as string) || 'Trillio'} className="w-full max-w-[260px] md:max-w-[300px] h-auto object-contain" onError={() => setLogoError(true)} />
+            <img src={logoUrl} alt={(cliente?.nome as string) || 'Trillio'} className="w-full max-w-[260px] md:max-w-[300px] h-auto object-contain" onError={handleLogoError} />
           </a>
         ) : (
           <span className="text-2xl font-bold tracking-tight opacity-90" style={{ color: corFonteTelaLogin }}>
