@@ -521,9 +521,11 @@ export default function LoginPage({
                 </div>
               ) : null}
               <div className="mt-4 text-center">
-                <a href={`/${url}/autocadastro`} className="text-sm hover:underline" style={{ color: loginAccent }}>
-                  {t('login.noAccount')}
-                </a>
+                {cliente?.permitirCadastro !== false ? (
+                  <a href={`/${url}/autocadastro`} className="text-sm hover:underline" style={{ color: loginAccent }}>
+                    {t('login.noAccount')}
+                  </a>
+                ) : null}
               </div>
             </form>
             )}
