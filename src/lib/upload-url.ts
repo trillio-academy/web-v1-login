@@ -27,7 +27,7 @@ function refUrls(ref: ImagemRef): string[] {
 
 /**
  * Ordered logo candidates for the login page (Backblaze only):
- * logoGrande → logoTelaDeLogin → logo
+ * logoTelaDeLogin (configurada no admin) → logoGrande → logo
  */
 export function buildLoginLogoCandidates(
   cliente: Record<string, unknown> | null | undefined,
@@ -35,8 +35,8 @@ export function buildLoginLogoCandidates(
 ): string[] {
   if (!cliente) return [];
   const sources: ImagemRef[] = [
-    cliente.logoGrandeTelaDeLogin as ImagemRef,
     cliente.logoTelaDeLogin as ImagemRef,
+    cliente.logoGrandeTelaDeLogin as ImagemRef,
     cliente.logo as ImagemRef,
   ];
   const seen = new Set<string>();

@@ -17,8 +17,12 @@ function getAllowedOrigins(): string[] {
     process.env.NEXT_PUBLIC_TRILLIO_URL,
     process.env.NEXT_PUBLIC_PLAY_APP_URL,
     process.env.NEXT_PUBLIC_BUSINESS_APP_URL,
+    process.env.NEXT_PUBLIC_BACKOFFICE_APP_URL,
     process.env.APP_TRILLIO_PLAY_URL,
     process.env.APP_TRILLIO_BUSINESS_URL,
+    process.env.APP_TRILLIO_BACKOFFICE_URL,
+    'https://backoffice.trillio.app',
+    'http://localhost:3001',
     'http://localhost:5000',
     'http://localhost:8080',
     'http://localhost:8081',
@@ -26,10 +30,24 @@ function getAllowedOrigins(): string[] {
   ].filter((url): url is string => Boolean(url));
 }
 
+function isTrillioHostname(hostname: string): boolean {
+  return (
+    hostname === 'trillio.app' ||
+    hostname.endsWith('.trillio.app') ||
+    hostname === 'trillio.com.br' ||
+    hostname.endsWith('.trillio.com.br')
+  );
+}
+
 function isAllowedOrigin(origin: string): boolean {
   const isDevelopment = process.env.NODE_ENV !== 'production';
   if (isDevelopment && origin.includes('localhost')) return true;
-  return getAllowedOrigins().some((allowed) => origin.startsWith(allowed));
+  if (getAllowedOrigins().some((allowed) => origin.startsWith(allowed))) return true;
+  try {
+    return isTrillioHostname(new URL(origin).hostname);
+  } catch {
+    return false;
+  }
 }
 
 function buildCorsHeaders(origin: string): Headers {

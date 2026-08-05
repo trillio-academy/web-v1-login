@@ -108,8 +108,10 @@ export default function LoginPage({
     const redirect = typeof window !== 'undefined'
       ? getSafeRedirectUrl(new URLSearchParams(window.location.search).get('redirect'))
       : null;
-    if (!redirect) return `/${url}/sso`;
-    return `/${url}/sso?redirect=${encodeURIComponent(redirect)}`;
+    const qs = new URLSearchParams();
+    qs.set('app', app);
+    if (redirect) qs.set('redirect', redirect);
+    return `/${url}/sso?${qs.toString()}`;
   };
 
   const isLoginPorSSO = Boolean(cliente?.isLoginPorSSO);
@@ -322,9 +324,12 @@ export default function LoginPage({
       ) : null}
       <div className={`flex justify-center items-center ${options?.showContinueButton ? 'my-6' : 'mt-4 mb-4 md:mt-8 md:mb-8 min-h-[80px] md:min-h-[120px]'}`}>
         {logoUrl ? (
-          <a href="https://trillio.com.br/" target="_blank" rel="noopener noreferrer" className="flex justify-center">
-            <img src={logoUrl} alt={(cliente?.nome as string) || 'Trillio'} className="w-full max-w-[260px] md:max-w-[300px] h-auto object-contain" onError={handleLogoError} />
-          </a>
+          <img
+            src={logoUrl}
+            alt={(cliente?.nome as string) || 'Logo'}
+            className="w-full max-w-[260px] md:max-w-[300px] h-auto object-contain"
+            onError={handleLogoError}
+          />
         ) : (
           <span className="text-2xl font-bold tracking-tight opacity-90" style={{ color: corFonteTelaLogin }}>
             {(cliente?.nome as string) || 'Trillio'}
@@ -520,11 +525,13 @@ export default function LoginPage({
                   </a>
                 </div>
               ) : null}
-              <div className="mt-4 text-center">
-                <a href={`/${url}/autocadastro`} className="text-sm hover:underline" style={{ color: loginAccent }}>
-                  {t('login.noAccount')}
-                </a>
-              </div>
+              {!loadingCliente && cliente?.permitirCadastro !== false ? (
+                <div className="mt-4 text-center">
+                  <a href={`/${url}/autocadastro`} className="text-sm hover:underline" style={{ color: loginAccent }}>
+                    {t('login.noAccount')}
+                  </a>
+                </div>
+              ) : null}
             </form>
             )}
             <div className="mt-8 pt-6 border-t border-gray-200 text-center text-xs text-gray-500 space-y-1">

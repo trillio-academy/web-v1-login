@@ -19,6 +19,16 @@
       "types": "./src/server/auth-set-token.ts",
       "import": "./src/server/auth-set-token.ts",
       "require": "./src/server/auth-set-token.ts"
+    },
+    "./fresh-login": {
+      "types": "./src/lib/fresh-login.ts",
+      "import": "./src/lib/fresh-login.ts",
+      "require": "./src/lib/fresh-login.ts"
+    },
+    "./src/lib/fresh-login": {
+      "types": "./src/lib/fresh-login.ts",
+      "import": "./src/lib/fresh-login.ts",
+      "require": "./src/lib/fresh-login.ts"
     }
   },
   "scripts": {},
