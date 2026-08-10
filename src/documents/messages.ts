@@ -57,6 +57,8 @@ export const documentMessages = {
       recoverError: 'Erro ao enviar email de recuperação.',
       recoverFillEmail: 'Por favor, preencha o campo de e-mail.',
       recoverRequestError: 'Erro ao processar solicitação. Tente novamente.',
+      recoverNoEmail:
+        'Não há um e-mail cadastrado para este usuário. Para solicitar a atualização do seu cadastro e recuperar o acesso, entre em contato pelo e-mail contato@trillio.com.br.',
       checkingAuth: 'Verificando autenticação...',
       loading: 'Carregando...',
       errorInvalidCredentials: 'Login ou senha incorretos. Verifique seus dados e tente novamente.',
@@ -124,6 +126,8 @@ export const documentMessages = {
       recoverError: 'Error sending recovery email.',
       recoverFillEmail: 'Please fill in the email field.',
       recoverRequestError: 'Error processing request. Please try again.',
+      recoverNoEmail:
+        'There is no email registered for this user. To request an update to your registration and recover access, contact contato@trillio.com.br.',
       checkingAuth: 'Checking authentication...',
       loading: 'Loading...',
       errorInvalidCredentials: 'Incorrect login or password. Check your details and try again.',
@@ -191,6 +195,8 @@ export const documentMessages = {
       recoverError: 'Error al enviar el correo de recuperación.',
       recoverFillEmail: 'Por favor, complete el campo de correo electrónico.',
       recoverRequestError: 'Error al procesar la solicitud. Intente de nuevo.',
+      recoverNoEmail:
+        'No hay un correo electrónico registrado para este usuario. Para solicitar la actualización de su registro y recuperar el acceso, contacte a contato@trillio.com.br.',
       checkingAuth: 'Verificando autenticación...',
       loading: 'Cargando...',
       errorInvalidCredentials: 'Usuario o contraseña incorrectos. Verifique sus datos e intente de nuevo.',
