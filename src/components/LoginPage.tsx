@@ -204,7 +204,7 @@ export default function LoginPage({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: recoverEmail, login: recoverEmail }),
       });
-      const data = (await response.json()) as { message?: string };
+      const data = (await response.json()) as { message?: string; code?: string };
       if (response.ok) {
         setRecoverMessage(data.message || t('login.recoverSuccess'));
         setTimeout(() => {
@@ -212,7 +212,19 @@ export default function LoginPage({
           setRecoverEmail('');
         }, 3000);
       } else {
-        setRecoverMessage(data.message || t('login.recoverError'));
+        const apiMessage = (data.message || '').toLowerCase();
+        const isMissingEmail =
+          response.status === 406 ||
+          data.code === 'NO_EMAIL' ||
+          apiMessage.includes('não possui email') ||
+          apiMessage.includes('nao possui email') ||
+          apiMessage.includes('não há um e-mail cadastrado') ||
+          apiMessage.includes('nao ha um e-mail cadastrado');
+        setRecoverMessage(
+          isMissingEmail
+            ? t('login.recoverNoEmail')
+            : data.message || t('login.recoverError')
+        );
       }
     } catch {
       setRecoverMessage(t('login.recoverRequestError'));
