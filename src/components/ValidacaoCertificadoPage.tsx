@@ -18,6 +18,10 @@ interface CertificadoApi {
   data?: string;
   dataCriacao?: string;
   codigo?: string;
+  vencido?: boolean;
+  validoAte?: string | null;
+  valido_ate?: string | null;
+  status?: string;
   matricula?: {
     aluno?: string;
     curso?: { nome?: string };
@@ -30,6 +34,8 @@ interface CertificadoExibicao {
   cursoNome: string;
   data: string;
   imgUrl: string;
+  vencido?: boolean;
+  validoAte?: string | null;
 }
 
 function normalizarCertificado(json: CertificadoApi): CertificadoExibicao {
@@ -45,7 +51,14 @@ function normalizarCertificado(json: CertificadoApi): CertificadoExibicao {
   const imgUrl = foto && typeof foto === 'object'
     ? ('webPath' in foto ? foto.webPath : foto.caminho) ?? ''
     : '';
-  return { aluno, cursoNome, data, imgUrl };
+  return {
+    aluno,
+    cursoNome,
+    data,
+    imgUrl,
+    vencido: json.vencido === true || json.status === 'vencido',
+    validoAte: json.validoAte ?? json.valido_ate ?? null,
+  };
 }
 
 function isRespostaCertificadoValido(data: unknown): data is CertificadoApi {

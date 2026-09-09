@@ -10,6 +10,22 @@ export interface CertificadoExibicao {
   cursoNome: string;
   data: string;
   imgUrl: string;
+  vencido?: boolean;
+  validoAte?: string | null;
+}
+
+function formatValidoAte(value?: string | null): string | null {
+  if (!value) return null;
+  const isoDate = String(value).slice(0, 10);
+  const parts = isoDate.split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
 export const CERTIFICADO_STORAGE_KEY = 'trillio_certificado_exibicao';
@@ -49,6 +65,8 @@ export function getCertificadoFromStorage(): CertificadoExibicao | null {
         cursoNome: typeof data.cursoNome === 'string' ? data.cursoNome : '',
         data: typeof data.data === 'string' ? data.data : '',
         imgUrl: typeof data.imgUrl === 'string' ? data.imgUrl : '',
+        vencido: data.vencido === true,
+        validoAte: typeof data.validoAte === 'string' ? data.validoAte : null,
       };
     }
   } catch {
@@ -143,6 +161,8 @@ export default function CertificadoResultadoPage({ url }: CertificadoResultadoPa
   }
 
   const hasInfo = certificado.aluno || certificado.cursoNome || certificado.data;
+  const vencido = certificado.vencido === true;
+  const validoAteLabel = formatValidoAte(certificado.validoAte);
 
   return (
     <div className="min-h-screen bg-black text-white py-8 px-4">
@@ -156,14 +176,23 @@ export default function CertificadoResultadoPage({ url }: CertificadoResultadoPa
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-500/20 text-green-400" aria-hidden>
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+            <span
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${vencido ? 'bg-amber-500/20 text-amber-400' : 'bg-green-500/20 text-green-400'}`}
+              aria-hidden
+            >
+              {vencido ? (
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              ) : (
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
             </span>
             <div>
-              <h1 className="text-xl font-bold text-white">{t('validacao.valid')}</h1>
-              <p className="text-sm text-gray-400">{t('validacao.validSubtitle')}</p>
+              <h1 className="text-xl font-bold text-white">{vencido ? t('validacao.expired') : t('validacao.valid')}</h1>
+              <p className="text-sm text-gray-400">{vencido ? t('validacao.expiredSubtitle') : t('validacao.validSubtitle')}</p>
             </div>
           </div>
           <div className="flex gap-3">
@@ -201,6 +230,14 @@ export default function CertificadoResultadoPage({ url }: CertificadoResultadoPa
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-1">{t('validacao.concluidoEm')}</dt>
                   <dd className="text-white font-medium">{certificado.data}</dd>
+                </div>
+              )}
+              {validoAteLabel && (
+                <div>
+                  <dt className={`text-xs font-medium uppercase tracking-wider mb-1 ${vencido ? 'text-amber-400' : 'text-gray-500'}`}>
+                    {vencido ? t('validacao.expiredOn') : t('validacao.validUntil')}
+                  </dt>
+                  <dd className={`font-medium ${vencido ? 'text-amber-400' : 'text-white'}`}>{validoAteLabel}</dd>
                 </div>
               )}
             </dl>
