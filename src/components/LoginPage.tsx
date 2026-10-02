@@ -352,9 +352,12 @@ export default function LoginPage({
         <p className="text-xl md:text-2xl font-bold leading-relaxed" style={{ color: corFonteTelaLogin }}>
           {cliente?.textoTelaLogin ? (cliente.textoTelaLogin as string) : t('login.welcome')}
         </p>
-        <p className="mt-2 text-base md:text-lg font-light tracking-wide opacity-80" style={{ color: corFonteTelaLogin }}>
-          {app === 'play' ? t('login.play') : t('login.business')}
-        </p>
+        {/* Com imagem de fundo do cliente, o nome da plataforma sai: a arte é dele, não carimbamos a marca em cima. */}
+        {backgroundLoginUrl ? null : (
+          <p className="mt-2 text-base md:text-lg font-light tracking-wide opacity-80" style={{ color: corFonteTelaLogin }}>
+            {app === 'play' ? t('login.play') : t('login.business')}
+          </p>
+        )}
       </div>
       {options?.showContinueButton ? (
         <div className="w-full mt-6 px-2">
